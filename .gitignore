@@ -48,3 +48,4 @@ INSTALL
 /src/xoreos
 # Convenience symlink
 /xoreos
+/build
