@@ -57,11 +57,11 @@ void NotificationManager::unregisterNotifyable(const std::list<Notifyable *>::it
 	_notifyables.erase(it);
 }
 
-void NotificationManager::resized(int oldWidth, int oldHeight, int newWidth, int newHeight) {
+void NotificationManager::resized(const glm::ivec2 &oldSize, const glm::ivec2 &newSize) {
 	Common::StackLock lock(_mutex);
 
 	for (std::list<Notifyable *>::iterator it = _notifyables.begin(); it != _notifyables.end(); ++it)
-		(*it)->notifyResized(oldWidth, oldHeight, newWidth, newHeight);
+		(*it)->notifyResized(oldSize, newSize);
 }
 
 void NotificationManager::cameraMoved() {

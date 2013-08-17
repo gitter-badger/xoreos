@@ -81,9 +81,9 @@ public:
 	/** Return the entry area. */
 	const Common::UString &getEntryArea() const;
 	/** Return the entry position. */
-	void getEntryPosition (float &x, float &y, float &z) const;
+	glm::vec3 getEntryPosition () const;
 	/** Return the entry direction. */
-	void getEntryDirection(float &x, float &y) const;
+	glm::vec2 getEntryDirection() const;
 
 
 	/** Return the list of areas in the module. */
@@ -127,11 +127,8 @@ private:
 
 	// Entry location
 	Common::UString _entryArea; ///< The area the PC starts in.
-	float _entryX;    ///< The X position the PC starts in.
-	float _entryY;    ///< The Y position the PC starts in.
-	float _entryZ;    ///< The Z position the PC starts in.
-	float _entryDirX; ///< The X orientation the PC starts in.
-	float _entryDirY; ///< The Y orientation the PC starts in.
+	glm::vec3 _entryPosition;   ///< The position the PC starts in.
+	glm::vec2 _entryDirection;  ///< The orientation the PC starts in.
 
 	std::vector<Common::UString> _haks;     ///< HAKs required by the module.
 	std::vector<Common::UString> _areas;    ///< Areas found in the module.

@@ -186,9 +186,8 @@ PLTImage::~PLTImage() {
 void PLTImage::create(const PLTFile &parent) {
 	_mipMaps.push_back(new MipMap);
 
-	_mipMaps[0]->width  = parent._width;
-	_mipMaps[0]->height = parent._height;
-	_mipMaps[0]->data.resize(_mipMaps[0]->width * _mipMaps[0]->height * 4);
+	_mipMaps[0]->size = glm::uvec2(parent._width, parent._height);
+	_mipMaps[0]->data.resize(_mipMaps[0]->size.x * _mipMaps[0]->size.y * 4);
 
 	byte rows[4 * 256 * PLTFile::kLayerMAX];
 	getColorRows(parent, rows);
@@ -216,14 +215,14 @@ void PLTImage::getColorRows(const PLTFile &parent, byte *rows) {
 				throw std::exception();
 
 			const MipMap &mipMap = tga.getMipMap(0);
-			if (mipMap.width != 256)
+			if (mipMap.size.x != 256)
 				throw std::exception();
 
 			uint8 row = parent._colors[i];
-			if (row >= mipMap.height)
+			if (row >= mipMap.size.y)
 				throw std::exception();
 
-			row = mipMap.height - 1 - row;
+			row = mipMap.size.y - 1 - row;
 
 			memcpy(rows, &mipMap.data[0] + (row * 4 * 256), 4 * 256);
 

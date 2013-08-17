@@ -38,7 +38,6 @@
 #include "common/debug.h"
 #include "common/stream.h"
 #include "common/streamtokenizer.h"
-#include "common/vector3.h"
 
 #include "aurora/types.h"
 #include "aurora/resman.h"
@@ -944,16 +943,16 @@ void ModelNode_NWN_Binary::readNodeControllers(Model_NWN::ParserContext &ctx,
 			for (int r = 0; r < rowCount; r++) {
 				PositionKeyFrame p;
 				p.time = data[timeIndex + r];
-				p.x = data[dataIndex + (r * columnCount) + 0];
-				p.y = data[dataIndex + (r * columnCount) + 1];
-				p.z = data[dataIndex + (r * columnCount) + 2];
+				p.position.x = data[dataIndex + (r * columnCount) + 0];
+				p.position.y = data[dataIndex + (r * columnCount) + 1];
+				p.position.z = data[dataIndex + (r * columnCount) + 2];
 				_positionFrames.push_back(p);
 
 				// Starting position
 				if (p.time == 0.0) {
-					_position[0] = p.x;
-					_position[1] = p.y;
-					_position[2] = p.z;
+					_position[0] = p.position.x;
+					_position[1] = p.position.y;
+					_position[2] = p.position.z;
 					ctx.hasPosition = true;
 				}
 			}
@@ -965,10 +964,10 @@ void ModelNode_NWN_Binary::readNodeControllers(Model_NWN::ParserContext &ctx,
 			for (int r = 0; r < rowCount; r++) {
 				QuaternionKeyFrame q;
 				q.time = data[timeIndex + r];
-				q.x = data[dataIndex + (r * columnCount) + 0];
-				q.y = data[dataIndex + (r * columnCount) + 1];
-				q.z = data[dataIndex + (r * columnCount) + 2];
-				q.q = data[dataIndex + (r * columnCount) + 3];
+				q.quaternion.x = data[dataIndex + (r * columnCount) + 0];
+				q.quaternion.y = data[dataIndex + (r * columnCount) + 1];
+				q.quaternion.z = data[dataIndex + (r * columnCount) + 2];
+				q.quaternion.a = data[dataIndex + (r * columnCount) + 3];
 				_orientationFrames.push_back(q);
 				// Starting orientation
 				// TODO: Handle animation orientation correctly
@@ -1065,9 +1064,9 @@ void ModelNode_NWN_ASCII::load(Model_NWN::ParserContext &ctx,
 			setParent(parent);
 
 		} else if (line[0] == "position") {
-			readFloats(line, _position, 3, 1);
+			readFloats(line, &_position[0], 3, 1);
 		} else if (line[0] == "orientation") {
-			readFloats(line, _orientation, 4, 1);
+			readFloats(line, &_orientation[0], 4, 1);
 
 			_orientation[3] = Common::rad2deg(_orientation[3]);
 		} else if (line[0] == "render") {
@@ -1243,12 +1242,10 @@ void ModelNode_NWN_ASCII::readFaces(Model_NWN::ParserContext &ctx, Mesh &mesh) {
 	}
 }
 
-typedef Common::Vector3 Vec3;
-
 struct FaceVert {
 	uint32 p, t; // position, texture coord indices
 	uint32 i;    // unique vertex id
-	Vec3 n;      // normal vector
+	glm::vec3 n; // normal vector
 };
 
 bool operator == (const FaceVert &a, const FaceVert &b) {
@@ -1291,10 +1288,10 @@ void ModelNode_NWN_ASCII::processMesh(Mesh &mesh) {
 		const uint32 t[3] = {mesh.tIA[i], mesh.tIB[i], mesh.tIC[i]};
 
 		// Face normal
-		const Vec3 p1(mesh.vX[v[0]], mesh.vY[v[0]], mesh.vZ[v[0]]);
-		const Vec3 p2(mesh.vX[v[1]], mesh.vY[v[1]], mesh.vZ[v[1]]);
-		const Vec3 p3(mesh.vX[v[2]], mesh.vY[v[2]], mesh.vZ[v[2]]);
-		const Vec3 n = (p2 - p1).cross(p3 - p2).norm();
+		const glm::vec3 p1 = glm::vec3(mesh.vX[v[0]], mesh.vY[v[0]], mesh.vZ[v[0]]);
+		const glm::vec3 p2 = glm::vec3(mesh.vX[v[1]], mesh.vY[v[1]], mesh.vZ[v[1]]);
+		const glm::vec3 p3 = glm::vec3(mesh.vX[v[2]], mesh.vY[v[2]], mesh.vZ[v[2]]);
+		const glm::vec3 n = glm::normalize(glm::cross(p2 - p1, p3 - p2));
 
 		for (uint32 j = 0; j < 3; j++) {
 			FaceVert fv;

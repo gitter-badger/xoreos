@@ -49,15 +49,15 @@ public:
 	             const Common::UString &model);
 	~WidgetSlider();
 
-	void setPosition(float x, float y, float z);
+	void setPosition(const glm::vec3 &position);
 
 	void setSteps(int steps);
 
 	int getState() const;
 	void setState(int state);
 
-	void mouseMove(uint8 state, float x, float y);
-	void mouseDown(uint8 state, float x, float y);
+	void mouseMove(uint8 state, const glm::vec2 &point);
+	void mouseDown(uint8 state, const glm::vec2 &point);
 
 private:
 	float _width;
@@ -69,7 +69,7 @@ private:
 
 	Graphics::Aurora::ModelNode *_thumb;
 
-	void changedValue(float x, float y);
+	void changedValue(const glm::vec2 &point);
 	void changePosition(float value);
 };
 

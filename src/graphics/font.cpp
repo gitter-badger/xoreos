@@ -71,10 +71,10 @@ float Font::getHeight(const Common::UString &text) const {
 void Font::buildChars(const Common::UString &str) {
 }
 
-void Font::draw(Common::UString text, const ColorPositions &colors,
-                float r, float g, float b, float a, float align) const {
+void Font::draw(Common::UString text, const ColorPositions &colors, const glm::vec4 &color,
+                float align) const {
 
-	glColor4f(r, g, b, a);
+	glColor4f(color.r, color.g, color.b, color.a);
 
 	std::vector<Common::UString> lines;
 	float maxLength = split(text, lines);
@@ -84,7 +84,7 @@ void Font::draw(Common::UString text, const ColorPositions &colors,
 
 	uint32 position = 0;
 
-	ColorPositions::const_iterator color = colors.begin();
+	ColorPositions::const_iterator colorIt = colors.begin();
 
 	// Draw lines
 	for (std::vector<Common::UString>::iterator l = lines.begin(); l != lines.end(); ++l) {
@@ -97,13 +97,13 @@ void Font::draw(Common::UString text, const ColorPositions &colors,
 		// Draw line
 		for (Common::UString::iterator s = l->begin(); s != l->end(); ++s, position++) {
 			// If we have color changes, apply them
-			while ((color != colors.end()) && (color->position <= position)) {
-				if (color->defaultColor)
-					glColor4f(r, g, b, a);
+			while ((colorIt != colors.end()) && (colorIt->position <= position)) {
+				if (colorIt->defaultColor)
+					glColor4f(color.r, color.g, color.b, color.a);
 				else
-					glColor4f(color->r, color->g, color->b, color->a);
+					glColor4f(colorIt->color.r, colorIt->color.g, colorIt->color.b, colorIt->color.a);
 
-				++color;
+				++colorIt;
 			}
 
 			draw(*s);

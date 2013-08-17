@@ -62,7 +62,7 @@ public:
 	bool operator()(Object *a, Object *b);
 
 private:
-	float xt, yt, zt;
+	glm::vec3 tpos;
 
 	float getDistance(Object &a);
 };
@@ -162,7 +162,7 @@ private:
 
 	Location *convertLocation(Aurora::NWScript::EngineType *e);
 
-	void jumpTo(Object *object, Area *area, float x, float y, float z);
+	void jumpTo(Object *object, Area *area, const glm::vec3 &position);
 
 	void random(Aurora::NWScript::FunctionContext &ctx);
 	void printString(Aurora::NWScript::FunctionContext &ctx);

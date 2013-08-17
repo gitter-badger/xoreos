@@ -34,7 +34,6 @@
 #include <vector>
 
 #include "common/ustring.h"
-#include "common/transmatrix.h"
 #include "common/boundingbox.h"
 
 #include "graphics/types.h"
@@ -52,17 +51,12 @@ class Model;
 
 struct PositionKeyFrame {
 	float time;
-	float x;
-	float y;
-	float z;
+	glm::vec3 position;
 };
 
 struct QuaternionKeyFrame {
 	float time;
-	float x;
-	float y;
-	float z;
-	float q;
+	glm::vec4 quaternion;
 };
 
 class ModelNode {
@@ -73,9 +67,7 @@ public:
 	/** Get the node's name. */
 	const Common::UString &getName() const;
 
-	float getWidth () const; ///< Get the width of the node's bounding box.
-	float getHeight() const; ///< Get the height of the node's bounding box.
-	float getDepth () const; ///< Get the depth of the node's bounding box.
+	glm::vec3 getSize() const; ///< Get the [width,height,depth] of the node's bounding box.
 
 	/** Should the node never be rendered at all? */
 	void setInvisible(bool invisible);
@@ -86,26 +78,26 @@ public:
 	// Positioning
 
 	/** Get the position of the node. */
-	void getPosition(float &x, float &y, float &z) const;
+	glm::vec3 getPosition() const;
 	/** Get the rotation of the node. */
-	void getRotation(float &x, float &y, float &z) const;
+	glm::vec3 getRotation() const;
 	/** Get the orientation of the node. */
-	void getOrientation(float &x, float &y, float &z, float &a) const;
+	glm::vec4 getOrientation() const;
 
 	/** Get the position of the node after translate/rotate. */
-	void getAbsolutePosition(float &x, float &y, float &z) const;
+	glm::vec3 getAbsolutePosition() const;
 
 	/** Set the position of the node. */
-	void setPosition(float x, float y, float z);
+	void setPosition(const glm::vec3 &position);
 	/** Set the rotation of the node. */
-	void setRotation(float x, float y, float z);
+	void setRotation(const glm::vec3 &rotation);
 	/** Set the orientation of the node. */
-	void setOrientation(float x, float y, float z, float a);
+	void setOrientation(const glm::vec3 &axis, float angle);
 
 	/** Move the node, relative to its current position. */
-	void move  (float x, float y, float z);
+	void move  (const glm::vec3 &amount);
 	/** Rotate the node, relative to its current rotation. */
-	void rotate(float x, float y, float z);
+	void rotate(const glm::vec3 &amount);
 
 
 protected:
@@ -121,16 +113,16 @@ protected:
 	VertexBuffer _vertexBuffer; ///< Node geometry vertex buffer.
 	IndexBuffer _indexBuffer;   ///< Node geometry index buffer.
 
-	float _center     [3]; ///< The node's center.
-	float _position   [3]; ///< Position of the node.
-	float _rotation   [3]; ///< Node rotation.
-	float _orientation[4]; ///< Orientation of the node.
+	glm::vec3 _center;      ///< The node's center.
+	glm::vec3 _position;    ///< Position of the node.
+	glm::vec3 _rotation;    ///< Node rotation.
+	glm::vec4 _orientation; ///< Orientation of the node.
 
 	std::vector<PositionKeyFrame> _positionFrames; ///< Keyframes for position animation
 	std::vector<QuaternionKeyFrame> _orientationFrames; ///< Keyframes for orientation animation
 
 	/** Position of the node after translate/rotate. */
-	Common::TransformationMatrix _absolutePosition;
+	glm::mat4 _absolutePosition;
 
 	float _wirecolor[3]; ///< Color of the wireframe.
 	float _ambient  [3]; ///< Ambient color.
@@ -209,8 +201,8 @@ public:
 	void reparent(ModelNode &parent);
 
 	// Animation helpers
-	void interpolatePosition(float time, float &x, float &y, float &z) const;
-	void interpolateOrientation(float time, float &x, float &y, float &z, float &a) const;
+	glm::vec3 interpolatePosition(float time) const;
+	glm::vec4 interpolateOrientation(float time) const;
 
 	friend class Model;
 };

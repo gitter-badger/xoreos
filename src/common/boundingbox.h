@@ -30,7 +30,7 @@
 #ifndef COMMON_BOUNDINGBOX_H
 #define COMMON_BOUNDINGBOX_H
 
-#include "common/transmatrix.h"
+#include "common/types.h"
 
 namespace Common {
 
@@ -44,29 +44,27 @@ public:
 
 	bool isEmpty() const;
 
-	const TransformationMatrix &getOrigin() const;
+	const glm::mat4 &getOrigin() const;
 
-	void getMin(float &x, float &y, float &z) const;
-	void getMax(float &x, float &y, float &z) const;
+	glm::vec3 getMin() const;
+	glm::vec3 getMax() const;
 
-	float getWidth () const; ///< Get the width of the bounding box.
-	float getHeight() const; ///< Get the height of the bounding box.
-	float getDepth () const; ///< Get the depth of the bounding box.
+	glm::vec3 getSize() const; ///< Get the [width,height,depth] of the bounding box.
 
-	bool isIn(float x, float y         ) const;
-	bool isIn(float x, float y, float z) const;
+	bool isIn(const glm::vec2 &point) const;
+	bool isIn(const glm::vec3 &point) const;
 
-	bool isIn(float x1, float y1, float z1, float x2, float y2, float z2) const;
+	bool isIn(const std::pair<glm::vec3,glm::vec3> &line) const;
 
-	void add(float x, float y, float z);
+	void add(const glm::vec3 &point);
 	void add(const BoundingBox &box);
 
-	void translate(float x, float y, float z);
-	void scale    (float x, float y, float z);
+	void translate(const glm::vec3 &amount);
+	void scale    (const glm::vec3 &amount);
 
-	void rotate(float angle, float x, float y, float z);
+	void rotate(float angle, const glm::vec3 &point);
 
-	void transform(const Matrix &m);
+	void transform(const glm::mat4 &m);
 
 	/** Apply the origin transformations directly to the coordinates. */
 	void absolutize();
@@ -78,22 +76,18 @@ private:
 	bool _empty;
 	bool _absolute;
 
-	TransformationMatrix _origin;
+	glm::mat4 _origin;
 
-	float _coords[8][3];
+	glm::vec3 _coords[8];
 
-	float _min[3];
-	float _max[3];
-
-	inline float getCoordMin(int i) const;
-	inline float getCoordMax(int i) const;
+	glm::vec3 _min;
+	glm::vec3 _max;
 
 	bool getIntersection(float fDst1, float fDst2,
-	                     float x1, float y1, float z1,
-	                     float x2, float y2, float z2,
-	                     float &x, float &y, float &z) const;
-	bool inBox(float x, float y, float z, float minX, float minY, float minZ,
-	           float maxX, float maxY, float maxZ, int axis) const;
+	                     const std::pair<glm::vec3,glm::vec3> &line,
+	                     glm::vec3 &point) const;
+	bool inBox(const glm::vec3 &point, const glm::vec3 &min,
+	           const glm::vec3 &max, int axis) const;
 };
 
 } // End of namespace Common

@@ -40,16 +40,15 @@ namespace NWN {
 
 QuadWidget::QuadWidget(::Engines::GUI &gui, const Common::UString &tag,
                        const Common::UString &texture,
-                       float  x1, float  y1, float  x2, float  y2,
-                       float tX1, float tY1, float tX2, float tY2) :
+	                     const glm::vec2 &p1, const glm::vec2 &p2,
+	                     const glm::vec2 &t1, const glm::vec2 &t2) :
 	NWNWidget(gui, tag) {
 
-	_quad = new Graphics::Aurora::GUIQuad(texture, x1, y1, x2, y2, tX1, tY1, tX2, tY2);
+	_quad = new Graphics::Aurora::GUIQuad(texture, p1, p2, t1, t2);
 	_quad->setTag(tag);
 	_quad->setClickable(true);
 
-	_width  = ABS(x2 - x1);
-	_height = ABS(y2 - y1);
+	_size = glm::abs(p2 - p1);
 }
 
 QuadWidget::~QuadWidget() {
@@ -64,11 +63,11 @@ void QuadWidget::hide() {
 	_quad->hide();
 }
 
-void QuadWidget::setPosition(float x, float y, float z) {
-	NWNWidget::setPosition(x, y, z);
+void QuadWidget::setPosition(const glm::vec3 &position) {
+	NWNWidget::setPosition(position);
 
-	getPosition(x, y, z);
-	_quad->setPosition(x, y, z);
+	const glm::vec3 p = getPosition();
+	_quad->setPosition(p);
 }
 
 void QuadWidget::setColor(float r, float g, float b, float a) {
@@ -79,20 +78,12 @@ void QuadWidget::setTexture(const Common::UString &texture) {
 	_quad->setTexture(texture);
 }
 
-void QuadWidget::setWidth(float w) {
-	_quad->setWidth(w);
+void QuadWidget::setSize(const glm::vec2 &size) {
+	_quad->setSize(size);
 }
 
-void QuadWidget::setHeight(float h) {
-	_quad->setHeight(h);
-}
-
-float QuadWidget::getWidth() const {
-	return _width;
-}
-
-float QuadWidget::getHeight() const {
-	return _height;
+glm::vec2 QuadWidget::getSize() const {
+	return _size;
 }
 
 } // End of namespace NWN

@@ -469,17 +469,13 @@ Common::UString GFFStruct::getString(const Common::UString &field,
 	}
 
 	if (f->type == kFieldTypeVector) {
-		float x, y, z;
-
-		getVector(field, x, y, z);
-		return Common::UString::sprintf("%f/%f/%f", x, y, z);
+		const glm::vec3 vector = getVector(field);
+		return Common::UString::sprintf("%f/%f/%f", vector.x, vector.y, vector.z);
 	}
 
 	if (f->type == kFieldTypeOrientation) {
-		float a, b, c, d;
-
-		getOrientation(field, a, b, c, d);
-		return Common::UString::sprintf("%f/%f/%f/%f", a, b, c, d);
+		const glm::vec4 orientation = getOrientation(field);
+		return Common::UString::sprintf("%f/%f/%f/%f", orientation.x, orientation.y, orientation.z, orientation.w);
 	}
 
 	throw Common::Exception("Field is not a string(able) type");
@@ -519,74 +515,41 @@ Common::SeekableReadStream *GFFStruct::getData(const Common::UString &field) con
 	return data.readStream(size);
 }
 
-void GFFStruct::getVector(const Common::UString &field,
-                          float &x, float &y, float &z) const {
+glm::vec3 GFFStruct::getVector(const Common::UString &field) const {
 	load();
 
 	const Field *f = getField(field);
 	if (!f)
-		return;
+		return glm::vec3();
 	if (f->type != kFieldTypeVector)
 		throw Common::Exception("Field is not a vector type");
 
 	Common::SeekableReadStream &data = getData(*f);
 
-	x = data.readIEEEFloatLE();
-	y = data.readIEEEFloatLE();
-	z = data.readIEEEFloatLE();
+	const float x = data.readIEEEFloatLE();
+	const float y = data.readIEEEFloatLE();
+	const float z = data.readIEEEFloatLE();
+
+	return glm::vec3(x, y, z);
 }
 
-void GFFStruct::getOrientation(const Common::UString &field,
-                               float &a, float &b, float &c, float &d) const {
+glm::vec4 GFFStruct::getOrientation(const Common::UString &field) const {
 	load();
 
 	const Field *f = getField(field);
 	if (!f)
-		return;
+		return glm::vec4();
 	if (f->type != kFieldTypeOrientation)
 		throw Common::Exception("Field is not an orientation type");
 
 	Common::SeekableReadStream &data = getData(*f);
 
-	a = data.readIEEEFloatLE();
-	b = data.readIEEEFloatLE();
-	c = data.readIEEEFloatLE();
-	d = data.readIEEEFloatLE();
-}
+	const float x = data.readIEEEFloatLE();
+	const float y = data.readIEEEFloatLE();
+	const float z = data.readIEEEFloatLE();
+	const float w = data.readIEEEFloatLE();
 
-void GFFStruct::getVector(const Common::UString &field,
-                          double &x, double &y, double &z) const {
-	load();
-
-	const Field *f = getField(field);
-	if (!f)
-		return;
-	if (f->type != kFieldTypeVector)
-		throw Common::Exception("Field is not a vector type");
-
-	Common::SeekableReadStream &data = getData(*f);
-
-	x = data.readIEEEFloatLE();
-	y = data.readIEEEFloatLE();
-	z = data.readIEEEFloatLE();
-}
-
-void GFFStruct::getOrientation(const Common::UString &field,
-                               double &a, double &b, double &c, double &d) const {
-	load();
-
-	const Field *f = getField(field);
-	if (!f)
-		return;
-	if (f->type != kFieldTypeOrientation)
-		throw Common::Exception("Field is not an orientation type");
-
-	Common::SeekableReadStream &data = getData(*f);
-
-	a = data.readIEEEFloatLE();
-	b = data.readIEEEFloatLE();
-	c = data.readIEEEFloatLE();
-	d = data.readIEEEFloatLE();
+	return glm::vec4(x, y, z, w);
 }
 
 const GFFStruct &GFFStruct::getStruct(const Common::UString &field) const {

@@ -63,7 +63,7 @@ public:
 	 *  @return true if the cursor could be added to the manager.
 	 */
 	bool add(const Common::UString &name, const Common::UString &group,
-	         const Common::UString &state = "", int hotspotX = -1, int hotspotY = -1);
+	         const Common::UString &state = "", const glm::ivec2 &hotspot = glm::ivec2(-1, -1));
 
 	/** Register this cursor as the default cursor. */
 	void setDefault(const Common::UString &group, const Common::UString &state = "");
@@ -86,14 +86,16 @@ public:
 	void showCursor(); ///< Unhide the cursor.
 
 	/** Get the current cursor position. */
-	uint8 getPosition(int &x, int &y) const;
+	glm::ivec2 getPosition() const;
 	/** Move the cursor to a specific position. */
-	void  setPosition(int  x, int  y);
+	void  setPosition(const glm::ivec2 &cursor);
+	/** Get the current cursor state. */
+	uint8 getState() const;
 
 	/** Convert cursor position to screen position. */
-	void toScreenCoordinates(int x, int y, float &sX, float &sY);
+	glm::vec2 toScreenCoordinates(const glm::ivec2 &cursor);
 	/** Convert screen position to cursor position. */
-	void fromScreenCoordinates(float sX, float sY, int &x, int &y);
+	glm::ivec2 fromScreenCoordinates(const glm::vec2 &screen);
 
 	bool isVisible() const; ///< Is a cursor current visible?
 

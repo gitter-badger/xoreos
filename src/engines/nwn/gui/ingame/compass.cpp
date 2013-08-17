@@ -55,11 +55,11 @@ CompassWidget::~CompassWidget() {
 
 // TODO: The disk rotation should feel more "natural", i.e. it should
 //       be more sluggish.
-void CompassWidget::setRotation(float x, float y, float z) {
-	_model->setRotation(-x, 0.0, 0.0);
+void CompassWidget::setRotation(const glm::vec3 &rotation) {
+	_model->setRotation(glm::vec3(-rotation.x, 0.0, 0.0));
 	Graphics::Aurora::ModelNode *pointer = _model->getNode("cmp_pointer");
 	if (pointer)
-		pointer->setRotation(0.0, 0.0, y);
+		pointer->setRotation(glm::vec3(0.0, 0.0, rotation.y));
 }
 
 
@@ -68,10 +68,9 @@ Compass::Compass(float position) {
 
 	WidgetPanel *panel = new WidgetPanel(*this, "CompassPanel", "pnl_compass");
 
-	float panelWidth  = panel->getWidth ();
-	float panelHeight = panel->getHeight();
+	const glm::vec2 panelSize = panel->getSize();
 
-	panel->setPosition(- panelWidth, position, 0.0);
+	panel->setPosition(glm::vec3(- panelSize.x, position, 0.0));
 
 	addWidget(panel);
 
@@ -80,12 +79,11 @@ Compass::Compass(float position) {
 
 	_compass = new CompassWidget(*this, "Compass");
 
-	_compass->setPosition(- (panelWidth / 2.0), position + (panelHeight / 2.0), -100.0);
+	_compass->setPosition(glm::vec3(- (panelSize.x / 2.0), position + (panelSize.y / 2.0), -100.0));
 
 	addWidget(_compass);
 
-
-	notifyResized(0, 0, GfxMan.getScreenWidth(), GfxMan.getScreenHeight());
+	notifyResized(glm::ivec2(0, 0), GfxMan.getScreenSize());
 }
 
 Compass::~Compass() {
@@ -94,14 +92,14 @@ Compass::~Compass() {
 void Compass::callbackActive(Widget &widget) {
 }
 
-void Compass::notifyResized(int oldWidth, int oldHeight, int newWidth, int newHeight) {
-	setPosition(newWidth / 2.0, - (newHeight / 2.0), -10.0);
+void Compass::notifyResized(const glm::ivec2 &oldSize, const glm::ivec2 &newSize) {
+	setPosition(glm::vec3(newSize.x / 2.0, -(newSize.y / 2.0), -10.0));
 }
 
 void Compass::notifyCameraMoved() {
-	const float *orientation = CameraMan.getOrientation();
+	const glm::vec3 orientation = CameraMan.getOrientation();
 
-	_compass->setRotation(orientation[0] + 90.0, orientation[1], orientation[2]);
+	_compass->setRotation(orientation + glm::vec3(90.0, 0.0, 0.0));
 }
 
 } // End of namespace NWN

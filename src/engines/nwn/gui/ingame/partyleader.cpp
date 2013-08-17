@@ -67,27 +67,25 @@ PartyLeader::PartyLeader(Module &module) : _module(&module),
 
 	WidgetPanel *playerPanel = new WidgetPanel(*this, "LeaderPanel", "pnl_party_bar");
 
-	playerPanel->setPosition(- playerPanel->getWidth(), 0.0, 0.0);
+	playerPanel->setPosition(glm::vec3(- playerPanel->getSize().x, 0.0, 0.0));
 
 	addWidget(playerPanel);
 
 
 	// Buttons
 
-	float buttonsX = - playerPanel->getWidth () +  4.0;
-	float buttonsY = - playerPanel->getHeight() + 57.0;
+	const glm::vec2 buttonPos = -playerPanel->getSize() + glm::vec2(4.0, 57.0);
 
 	for (int i = 0; i < 8; i++) {
 		WidgetButton *button = new WidgetButton(*this, kButtonTags[i], kButtonModels[i]);
 
 		button->setTooltip(TalkMan.getString(kButtonTooltips[i]));
-		button->setTooltipPosition(0.0, -10.0, -1.0);
+		button->setTooltipPosition(glm::vec3(0.0, -10.0, -1.0));
 
-		const float x = buttonsX + ((i / 4) * 36.0);
-		const float y = buttonsY - ((i % 4) * 18.0);
-		const float z = -100.0;
+		const glm::vec3 p = glm::vec3(buttonPos + glm::vec2((i / 4) * 36.0, -(i % 4) * 18.0),
+		                              -100.0);
 
-		button->setPosition(x, y, z);
+		button->setPosition(p);
 
 		addWidget(button);
 	}
@@ -100,24 +98,25 @@ PartyLeader::PartyLeader(Module &module) : _module(&module),
 	_portrait =
 		new PortraitWidget(*this, "LeaderPortrait", "gui_po_nwnlogo_", Portrait::kSizeMedium);
 
-	_portrait->setPosition(-67.0, -103.0, -100.0);
-	_portrait->setTooltipPosition(-50.0, 50.0, -1.0);
+	_portrait->setPosition(glm::vec3(-67.0, -103.0, -100.0));
+	_portrait->setTooltipPosition(glm::vec3(-50.0, 50.0, -1.0));
 
 	addWidget(_portrait);
 
 
 	// Health bar
 
-	_health = new QuadWidget(*this, "LeaderHealthbar", "", 0.0, 0.0, 6.0, 100.0);
+	_health = new QuadWidget(*this, "LeaderHealthbar", "", glm::vec2(0.0, 0.0), glm::vec2(6.0, 100.0));
 
 	_health->setColor(1.0, 0.0, 0.0, 1.0);
-	_health->setPosition(-76.0, -103.0, -100.0);
+	_health->setPosition(glm::vec3(-76.0, -103.0, -100.0));
 
 	addWidget(_health);
 
 
 	updatePortraitTooltip();
-	notifyResized(0, 0, GfxMan.getScreenWidth(), GfxMan.getScreenHeight());
+
+	notifyResized(glm::ivec2(0, 0), GfxMan.getScreenSize());
 }
 
 PartyLeader::~PartyLeader() {
@@ -152,7 +151,8 @@ void PartyLeader::setHealth(int32 current, int32 max) {
 	if (_maxHP > 0)
 		barLength = CLIP(((float) current) / ((float) max), 0.0f, 1.0f) * 100.0;
 
-	_health->setHeight(barLength);
+	const glm::vec2 size = _health->getSize();
+	_health->setSize(glm::vec2(size.x, barLength));
 
 	updatePortraitTooltip();
 }
@@ -174,8 +174,8 @@ void PartyLeader::updatePortraitTooltip() {
 	_portrait->setTooltip(tooltip);
 }
 
-void PartyLeader::notifyResized(int oldWidth, int oldHeight, int newWidth, int newHeight) {
-	setPosition(newWidth / 2.0, newHeight / 2.0, -10.0);
+void PartyLeader::notifyResized(const glm::ivec2 &oldSize, const glm::ivec2 &newSize) {
+	setPosition(glm::vec3(newSize, -20) / 2.0f);
 }
 
 } // End of namespace NWN

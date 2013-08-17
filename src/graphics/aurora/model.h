@@ -35,7 +35,6 @@
 #include <map>
 
 #include "common/ustring.h"
-#include "common/transmatrix.h"
 #include "common/boundingbox.h"
 
 #include "graphics/types.h"
@@ -65,44 +64,42 @@ public:
 	/** Get the model's name. */
 	const Common::UString &getName() const;
 
-	float getWidth () const; ///< Get the width of the model's bounding box.
-	float getHeight() const; ///< Get the height of the model's bounding box.
-	float getDepth () const; ///< Get the depth of the model's bounding box.
+	glm::vec3 getSize() const; ///< Get the size of the model's bounding box.
 
 	/** Should a bounding box be drawn around this model? */
 	void drawBound(bool enabled);
 
 
 	/** Is that point within the model's bounding box? */
-	bool isIn(float x, float y) const;
+	bool isIn(const glm::vec2 &point) const;
 	/** Is that point within the model's bounding box? */
-	bool isIn(float x, float y, float z) const;
+	bool isIn(const glm::vec3 &point) const;
 	/** Does the line from x1.y1.z1 to x2.y2.z2 intersect with model's bounding box? */
-	bool isIn(float x1, float y1, float z1, float x2, float y2, float z2) const;
+	bool isIn(const std::pair<glm::vec3, glm::vec3> &line) const;
 
 
 	// Positioning
 
 	/** Get the current position of the model. */
-	void getPosition(float &x, float &y, float &z) const;
+	glm::vec3 getPosition() const;
 	/** Get the current rotation of the model. */
-	void getRotation(float &x, float &y, float &z) const;
+	glm::vec3 getRotation() const;
 
 	/** Get the position of the node after translate/rotate. */
-	void getAbsolutePosition(float &x, float &y, float &z) const;
+	glm::vec3 getAbsolutePosition() const;
 
 	/** Set the current position of the model. */
-	void setPosition(float x, float y, float z);
+	void setPosition(const glm::vec3 &position);
 	/** Set the current rotation of the model. */
-	void setRotation(float x, float y, float z);
+	void setRotation(const glm::vec3 &rotation);
 
 	/** Move the model, relative to its current position. */
-	void move  (float x, float y, float z);
+	void move  (const glm::vec3 &position);
 	/** Rotate the model, relative to its current rotation. */
-	void rotate(float x, float y, float z);
+	void rotate(const glm::vec3 &rotation);
 
 	/** Get the point where the feedback tooltip is anchored. */
-	void getTooltipAnchor(float &x, float &y, float &z) const;
+	glm::vec3 getTooltipAnchor() const;
 
 	// States
 
@@ -202,13 +199,13 @@ protected:
 	/** All default animations, sorted from least to most probable. */
 	DefaultAnimations _defaultAnimations;
 
-	float _modelScale[3]; ///< The model's scale.
+	glm::vec3 _modelScale; ///< The model's scale.
 
-	float _position[3]; ///< Model's position.
-	float _rotation[3]; ///< Model's rotation.
-	float _center  [3]; ///< Model's center.
+	glm::vec3 _position; ///< Model's position.
+	glm::vec3 _rotation; ///< Model's rotation.
+	glm::vec3 _center; ///< Model's center.
 
-	Common::TransformationMatrix _absolutePosition;
+	glm::mat4 _absolutePosition;
 
 	/** The model's bounding box. */
 	Common::BoundingBox _boundBox;

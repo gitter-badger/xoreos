@@ -84,18 +84,19 @@ void WinIconImage::readData(Common::SeekableReadStream &cur) {
 	// TODO: Detection of which image to use
 	cur.skip((_imageCount - 1) * 16);
 
-	uint width  = cur.readByte();
-	uint height = cur.readByte();
+	glm::uvec2 size;
+	size.x = cur.readByte();
+	size.y = cur.readByte();
 	/* byte colorDepth = */ cur.readByte();
 
 	// Not terrible to handle, but whatever :P
-	if (width & 3)
+	if (size.x & 3)
 		throw Common::Exception("Non-divisible-by-4 images not handled");
 
-	if (width == 0)
-		width = 256;
-	if (height == 0)
-		height = 256;
+	if (size.x == 0)
+		size.x = 256;
+	if (size.y == 0)
+		size.y = 256;
 
 	if (cur.readByte() != 0)
 		throw Common::Exception("Reserved byte != 0");
@@ -130,7 +131,7 @@ void WinIconImage::readData(Common::SeekableReadStream &cur) {
 	if (bitsPerPixel != 8 && bitsPerPixel != 24)
 		throw Common::Exception("Unhandled bpp %d", bitsPerPixel);
 
-	const int pitch = width * (bitsPerPixel / 8);
+	const int pitch = size.x * (bitsPerPixel / 8);
 
 	// Now we're at the palette. Read it in for 8bpp
 	byte palette[256 * 4];
@@ -139,30 +140,29 @@ void WinIconImage::readData(Common::SeekableReadStream &cur) {
 		cur.read(palette, 256 * 4);
 
 	// The XOR map
-	byte *xorMap = new byte[pitch * height];
-	cur.read(xorMap, pitch * height);
+	byte *xorMap = new byte[pitch * size.y];
+	cur.read(xorMap, pitch * size.y);
 
 	// The AND map
-	const uint32 andWidth = (width + 7) / 8;
-	byte *andMap = new byte[andWidth * height];
-	cur.read(andMap, andWidth * height);
+	const uint32 andWidth = (size.x + 7) / 8;
+	byte *andMap = new byte[andWidth * size.y];
+	cur.read(andMap, andWidth * size.y);
 
 	_format    = kPixelFormatBGRA;
 	_formatRaw = kPixelFormatRGBA8;
 
 	_mipMaps.push_back(new MipMap);
 
-	_mipMaps[0]->width  = width;
-	_mipMaps[0]->height = height;
-	_mipMaps[0]->data.resize(width * height * 4);
+	_mipMaps[0]->size = size;
+	_mipMaps[0]->data.resize(size.x * size.y * 4);
 
 	const byte *xorSrc = xorMap;
 	      byte *dst    = &_mipMaps[0]->data[0];
 
-	for (uint32 y = 0; y < height; y++) {
+	for (uint32 y = 0; y < size.y; y++) {
 		const byte *andSrc = andMap + andWidth * y;
 
-		for (uint32 x = 0; x < width; x++) {
+		for (uint32 x = 0; x < size.x; x++) {
 			if (bitsPerPixel == 8) {
 				const byte pixel = *xorSrc++;
 

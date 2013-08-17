@@ -45,7 +45,7 @@ public:
 
 	virtual void load(const Aurora::GFFStruct &gff);
 
-	void mouseUp(uint8 state, float x, float y);
+	void mouseUp(uint8 state, const glm::vec2 &point);
 
 	virtual void enter();
 

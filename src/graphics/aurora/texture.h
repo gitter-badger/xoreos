@@ -57,8 +57,7 @@ public:
 	Texture(ImageDecoder *image, const TXI *txi = 0);
 	~Texture();
 
-	uint32 getWidth()  const;
-	uint32 getHeight() const;
+	glm::uvec2 getSize() const;
 
 	bool hasAlpha() const;
 
@@ -88,8 +87,7 @@ private:
 	ImageDecoder *_image; ///< The actual image.
 	TXI *_txi;            ///< The TXI.
 
-	uint32 _width;
-	uint32 _height;
+	glm::uvec2 _size;
 
 	void load(const Common::UString &name);
 	void load(ImageDecoder *image);

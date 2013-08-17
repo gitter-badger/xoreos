@@ -49,14 +49,14 @@ public:
 	/** A room. */
 	struct Room {
 		Common::UString model;
-		float x, y, z;
+		glm::vec3 position;
 	};
 
 	/** A place a door hooks into. */
 	struct DoorHook {
 		Common::UString name;
 		int unk0;
-		float x, y, z;
+		glm::vec3 position;
 		float unk1, unk2, unk3, unk4, unk5;
 	};
 

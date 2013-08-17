@@ -65,16 +65,14 @@ public:
 	void showPrompt();
 	void hidePrompt();
 
-	bool isIn(float x, float y) const;
-	bool isIn(float x, float y, float z) const;
+	bool isIn(const glm::vec2 &point) const;
+	bool isIn(const glm::vec3 &point) const;
 
 
 	// Dimensions
 
-	float getWidth () const;
-	float getHeight() const;
-	float getContentWidth () const;
-	float getContentHeight() const;
+	glm::vec2 getSize() const;
+	glm::vec2 getContentSize() const;
 
 	uint32 getLines  () const;
 	uint32 getColumns() const;
@@ -97,11 +95,11 @@ public:
 
 	void clearHighlight();
 
-	void startHighlight(int x, int y);
-	void stopHighlight(int x, int y);
+	void startHighlight(const glm::ivec2 &cursor);
+	void stopHighlight(const glm::ivec2 &cursor);
 
-	void highlightWord(int x, int y);
-	void highlightLine(int x, int y);
+	void highlightWord(const glm::ivec2 &cursor);
+	void highlightLine(const glm::ivec2 &cursor);
 
 	Common::UString getHighlight() const;
 
@@ -143,10 +141,8 @@ private:
 
 	float _lineHeight;
 
-	float _x;
-	float _y;
-	float _width;
-	float _height;
+	glm::vec2 _position;
+	glm::vec2 _size;
 
 	bool _cursorBlinkState;
 	uint32 _lastCursorBlink;
@@ -154,9 +150,8 @@ private:
 	float _scrollbarLength;
 	float _scrollbarPosition;
 
-	uint32 _highlightX;
-	uint32 _highlightY;
-	 int32 _highlightLength;
+	glm::uvec2 _highlightPosition;
+	int32      _highlightLength;
 
 	Common::DumpFile _redirect;
 
@@ -167,13 +162,13 @@ private:
 	void printLine(const Common::UString &line);
 
 	void updateHighlight();
-	bool getPosition(int cursorX, int cursorY, float &x, float &y);
-	void highlightClip(uint32 &x, uint32 &y) const;
+	glm::vec2  getPosition(const glm::ivec2 &cursor);
+	glm::uvec2 highlightClip(const glm::uvec2 &position) const;
 
 	void updateScrollbarLength();
 	void updateScrollbarPosition();
 
-	void notifyResized(int oldWidth, int oldHeight, int newWidth, int newHeight);
+	void notifyResized(const glm::ivec2 &oldSize, const glm::ivec2 &newSize);
 
 	static uint32 findWordStart(const Common::UString &line, uint32 pos);
 	static uint32 findWordEnd  (const Common::UString &line, uint32 pos);
@@ -189,10 +184,9 @@ public:
 
 	bool isVisible() const;
 
-	float  getWidth  () const;
-	float  getHeight () const;
-	uint32 getLines  () const;
-	uint32 getColumns() const;
+	glm::vec2 getSize   () const;
+	uint32    getLines  () const;
+	uint32    getColumns() const;
 
 	bool processEvent(Events::Event &event);
 

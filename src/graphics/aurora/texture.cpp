@@ -55,7 +55,7 @@ namespace Graphics {
 namespace Aurora {
 
 Texture::Texture(const Common::UString &name) : _textureID(0),
-	_type(::Aurora::kFileTypeNone), _image(0), _txi(0), _width(0), _height(0) {
+	_type(::Aurora::kFileTypeNone), _image(0), _txi(0), _size(0, 0) {
 
 	_txi = new TXI();
 
@@ -66,7 +66,7 @@ Texture::Texture(const Common::UString &name) : _textureID(0),
 }
 
 Texture::Texture(ImageDecoder *image, const TXI *txi) : _textureID(0),
-	_type(::Aurora::kFileTypeNone), _image(0), _txi(0), _width(0), _height(0) {
+	_type(::Aurora::kFileTypeNone), _image(0), _txi(0), _size(0, 0) {
 
 	if (txi)
 		_txi = new TXI(*txi);
@@ -94,12 +94,8 @@ TextureID Texture::getID() const {
 	return _textureID;
 }
 
-uint32 Texture::getWidth() const {
-	return _width;
-}
-
-uint32 Texture::getHeight() const {
-	return _height;
+glm::uvec2 Texture::getSize() const {
+	return _size;
 }
 
 bool Texture::hasAlpha() const {
@@ -164,8 +160,7 @@ void Texture::loadTXI(Common::SeekableReadStream *stream) {
 
 void Texture::loadImage() {
 	if (!_image) {
-		_width  = 0;
-		_height = 0;
+		_size = glm::uvec2(0, 0);
 		return;
 	}
 
@@ -177,8 +172,7 @@ void Texture::loadImage() {
 		_image->decompress();
 
 	// Set dimensions
-	_width  = _image->getMipMap(0).width;
-	_height = _image->getMipMap(0).height;
+	_size = _image->getMipMap(0).size;
 
 	// If we've still got no TXI, look if the image provides TXI data
 	loadTXI(_image->getTXI());
@@ -241,7 +235,7 @@ void Texture::doRebuild() {
 			const ImageDecoder::MipMap &mipMap = _image->getMipMap(i);
 
 			glCompressedTexImage2D(GL_TEXTURE_2D, i, _image->getFormatRaw(),
-			                       mipMap.width, mipMap.height, 0,
+			                       mipMap.size.x, mipMap.size.y, 0,
 			                       mipMap.data.size(), &mipMap.data[0]);
 		}
 
@@ -252,7 +246,7 @@ void Texture::doRebuild() {
 			const ImageDecoder::MipMap &mipMap = _image->getMipMap(i);
 
 			glTexImage2D(GL_TEXTURE_2D, i, _image->getFormatRaw(),
-			             mipMap.width, mipMap.height, 0, _image->getFormat(),
+			             mipMap.size.x, mipMap.size.y, 0, _image->getFormat(),
 			             _image->getDataType(), &mipMap.data[0]);
 		}
 

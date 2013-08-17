@@ -64,7 +64,7 @@ public:
 
 	void setMode(ChatMode mode);
 
-	void setPosition(float x, float y, float z);
+	void setPosition(const glm::vec3 &position);
 
 	void setTag(const Common::UString &tag);
 
@@ -80,8 +80,7 @@ public:
 	Quickchat(float position);
 	~Quickchat();
 
-	float getWidth () const;
-	float getHeight() const;
+	glm::vec2 getSize() const;
 
 protected:
 	void callbackActive(Widget &widget);
@@ -89,7 +88,7 @@ protected:
 private:
 	WidgetPanel *_prompt;
 
-	void notifyResized(int oldWidth, int oldHeight, int newWidth, int newHeight);
+	void notifyResized(const glm::ivec2 &oldSize, const glm::ivec2 &newSize);
 };
 
 } // End of namespace NWN

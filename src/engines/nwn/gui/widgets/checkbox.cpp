@@ -54,13 +54,13 @@ WidgetCheckBox::WidgetCheckBox(::Engines::GUI &gui, const Common::UString &tag,
 
 	_model->setState("checkedup");
 	if ((node = _model->getNode("XPlane")))
-		node->move(0.0, 0.0, -10.0);
+		node->move(glm::vec3(0.0, 0.0, -10.0));
 	_model->setState("checkeddown");
 	if ((node = _model->getNode("XPlane")))
-		node->move(0.0, 0.0, -10.0);
+		node->move(glm::vec3(0.0, 0.0, -10.0));
 	_model->setState("checkedhilite");
 	if ((node = _model->getNode("XPlane")))
-		node->move(0.0, 0.0, -10.0);
+		node->move(glm::vec3(0.0, 0.0, -10.0));
 
 	_state = false;
 	_down  = false;
@@ -143,7 +143,7 @@ void WidgetCheckBox::leave() {
 	updateModel(false);
 }
 
-void WidgetCheckBox::mouseDown(uint8 state, float x, float y) {
+void WidgetCheckBox::mouseDown(uint8 state, const glm::vec2 &point) {
 	if (isDisabled())
 		return;
 
@@ -156,7 +156,7 @@ void WidgetCheckBox::mouseDown(uint8 state, float x, float y) {
 	playSound("gui_check", Sound::kSoundTypeSFX);
 }
 
-void WidgetCheckBox::mouseUp(uint8 state, float x, float y) {
+void WidgetCheckBox::mouseUp(uint8 state, const glm::vec2 &point) {
 	if (isDisabled())
 		return;
 

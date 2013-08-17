@@ -55,10 +55,10 @@ public:
 	WidgetListItem(::Engines::GUI &gui);
 	~WidgetListItem();
 
-	void mouseUp  (uint8 state, float x, float y);
-	void mouseDown(uint8 state, float x, float y);
+	void mouseUp  (uint8 state, const glm::vec2 &point);
+	void mouseDown(uint8 state, const glm::vec2 &point);
 
-	void mouseDblClick(uint8 state, float x, float y);
+	void mouseDblClick(uint8 state, const glm::vec2 &point);
 
 	void select();
 
@@ -87,13 +87,12 @@ public:
 	void show();
 	void hide();
 
-	void setPosition(float x, float y, float z);
+	void setPosition(const glm::vec3 &position);
 
 	void setUnselectedColor(float r, float g, float b, float a);
 	void setSelectedColor(float r, float g, float b, float a);
 
-	float getWidth () const;
-	float getHeight() const;
+	glm::vec2 getSize() const;
 
 	void setTag(const Common::UString &tag);
 
@@ -129,7 +128,7 @@ public:
 	void show();
 	void hide();
 
-	void setPosition(float x, float y, float z);
+	void setPosition(const glm::vec3 &position);
 
 	float getContentWidth () const;
 	float getContentHeight() const;
@@ -148,16 +147,14 @@ public:
 
 	bool wasDblClicked();
 
-	void mouseDown(uint8 state, float x, float y);
+	void mouseDown(uint8 state, const glm::vec2 &point);
 
 	void subActive(Widget &widget);
 
 private:
 	Mode _mode;
 
-	float _contentX;
-	float _contentY;
-	float _contentZ;
+	glm::vec3 _content;
 
 	float _contentWidth;
 	float _contentHeight;

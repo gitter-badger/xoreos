@@ -53,10 +53,9 @@ public:
 	void show();
 	void hide();
 
-	void setPosition(float x, float y, float z);
+	void setPosition(const glm::vec3 &position);
 
-	float getWidth () const;
-	float getHeight() const;
+	glm::vec2 getSize() const;
 
 	void setTag(const Common::UString &tag);
 
@@ -72,21 +71,19 @@ public:
 	Quickbar();
 	~Quickbar();
 
-	float getWidth () const;
-	float getHeight() const;
+	glm::vec2 getSize() const;
 
 protected:
 	void callbackActive(Widget &widget);
 
 private:
-	float _slotWidth;
-	float _slotHeight;
+	glm::vec2 _slotSize;
 
 	float _edgeHeight;
 
 	void getSlotSize();
 
-	void notifyResized(int oldWidth, int oldHeight, int newWidth, int newHeight);
+	void notifyResized(const glm::ivec2 &oldSize, const glm::ivec2 &newSize);
 };
 
 } // End of namespace NWN

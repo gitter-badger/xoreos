@@ -76,11 +76,11 @@ public:
 	virtual void hide(); ///< Hide the object.
 
 	/** Is that point within the object? */
-	virtual bool isIn(float x, float y) const;
+	virtual bool isIn(const glm::vec2 &point) const;
 	/** Is that point within the object? */
-	virtual bool isIn(float x, float y, float z) const;
+	virtual bool isIn(const glm::vec3 &point) const;
 	/** Does the line from x1.y1.z1 to x2.y2.z2 intersect with the object? */
-	virtual bool isIn(float x1, float y1, float z1, float x2, float y2, float z2) const;
+	virtual bool isIn(const std::pair<glm::vec3, glm::vec3> &line) const;
 
 protected:
 	QueueType _queueExists;

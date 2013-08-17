@@ -86,8 +86,9 @@ void TXB::readHeader(Common::SeekableReadStream &txb, bool &needDeSwizzle) {
 	txb.skip(4); // Some float
 
 	// Image dimensions
-	uint32 width  = txb.readUint16LE();
-	uint32 height = txb.readUint16LE();
+	glm::uvec2 size;
+	size.x = txb.readUint16LE();
+	size.y = txb.readUint16LE();
 
 	// How's the pixel data encoded?
 	byte encoding    = txb.readByte();
@@ -113,7 +114,7 @@ void TXB::readHeader(Common::SeekableReadStream &txb, bool &needDeSwizzle) {
 		_dataType   = kPixelDataType8;
 
 		minDataSize = 4;
-		mipMapSize  = width * height * 4;
+		mipMapSize  = size.x * size.y * 4;
 
 	} else if (encoding == kEncodingDXT1) {
 		// S3TC DXT1
@@ -125,7 +126,7 @@ void TXB::readHeader(Common::SeekableReadStream &txb, bool &needDeSwizzle) {
 		_dataType   = kPixelDataType8;
 
 		minDataSize = 8;
-		mipMapSize  = width * height / 2;
+		mipMapSize  = size.x * size.y / 2;
 
 	} else if (encoding == kEncodingDXT5) {
 		// S3TC DXT5
@@ -137,7 +138,7 @@ void TXB::readHeader(Common::SeekableReadStream &txb, bool &needDeSwizzle) {
 		_dataType   = kPixelDataType8;
 
 		minDataSize = 16;
-		mipMapSize  = width * height;
+		mipMapSize  = size.x * size.y;
 
 	} else if (encoding == 0x09)
 		// TODO: This seems to be some compression with 8bit per pixel. No min
@@ -147,16 +148,15 @@ void TXB::readHeader(Common::SeekableReadStream &txb, bool &needDeSwizzle) {
 		throw Common::Exception("Unsupported TXB encoding 0x09");
 	 else
 		throw Common::Exception("Unknown TXB encoding 0x%02X (%dx%d, %d, %d)",
-				encoding, width, height, mipMapCount, dataSize);
+				encoding, size.x, size.y, mipMapCount, dataSize);
 
 	_mipMaps.reserve(mipMapCount);
 	for (uint32 i = 0; i < mipMapCount; i++) {
 		MipMap *mipMap = new MipMap;
 
-		mipMap->width  = MAX<uint32>(width,  1);
-		mipMap->height = MAX<uint32>(height, 1);
+		mipMap->size = glm::max(size, glm::uvec2(1, 1));
 
-		if (((mipMap->width < 4) || (mipMap->height < 4)) && (mipMap->width != mipMap->height)) {
+		if (((mipMap->size.x < 4) || (mipMap->size.y < 4)) && (mipMap->size.x != mipMap->size.y)) {
 			// Invalid mipmap dimensions
 			delete mipMap;
 			break;
@@ -174,20 +174,20 @@ void TXB::readHeader(Common::SeekableReadStream &txb, bool &needDeSwizzle) {
 
 		_mipMaps.push_back(mipMap);
 
-		width      >>= 1;
-		height     >>= 1;
+		size.x     >>= 1;
+		size.y     >>= 1;
 		mipMapSize >>= 2;
 
-		if ((width < 1) && (height < 1))
+		if ((size.x < 1) && (size.y < 1))
 			break;
 	}
 
 }
 
-void TXB::deSwizzle(byte *dst, const byte *src, uint32 width, uint32 height) {
-	for (uint32 y = 0; y < height; y++) {
-		for (uint32 x = 0; x < width; x++) {
-			const uint32 offset = deSwizzleOffset(x, y, width, height) * 4;
+void TXB::deSwizzle(byte *dst, const byte *src, const glm::uvec2 &size) {
+	for (uint32 y = 0; y < size.y; y++) {
+		for (uint32 x = 0; x < size.x; x++) {
+			const uint32 offset = deSwizzleOffset(x, y, size.x, size.y) * 4;
 
 			*dst++ = src[offset + 0];
 			*dst++ = src[offset + 1];
@@ -200,9 +200,10 @@ void TXB::deSwizzle(byte *dst, const byte *src, uint32 width, uint32 height) {
 void TXB::readData(Common::SeekableReadStream &txb, bool needDeSwizzle) {
 	for (std::vector<MipMap *>::iterator mipMap = _mipMaps.begin(); mipMap != _mipMaps.end(); ++mipMap) {
 
-		// If the texture width is a power of two, the texture memory layout is "swizzled"
-		const bool widthPOT = ((*mipMap)->width & ((*mipMap)->width - 1)) == 0;
+		// If the texture size.x is a power of two, the texture memory layout is "swizzled"
+		const bool widthPOT = ((*mipMap)->size.x & ((*mipMap)->size.x - 1)) == 0;
 		const bool swizzled = needDeSwizzle && widthPOT;
+
 
 		if (swizzled) {
 			std::vector<byte> tmp((*mipMap)->data.size());
@@ -210,7 +211,7 @@ void TXB::readData(Common::SeekableReadStream &txb, bool needDeSwizzle) {
 			if (txb.read(&tmp[0], (*mipMap)->data.size()) != (*mipMap)->data.size())
 				throw Common::Exception(Common::kReadError);
 
-			deSwizzle(&(*mipMap)->data[0], &tmp[0], (*mipMap)->width, (*mipMap)->height);
+			deSwizzle(&(*mipMap)->data[0], &tmp[0], (*mipMap)->size);
 
 		} else {
 			if (txb.read(&(*mipMap)->data[0], (*mipMap)->data.size()) != (*mipMap)->data.size())

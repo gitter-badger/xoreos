@@ -54,7 +54,7 @@ FPS::~FPS() {
 
 void FPS::init() {
 	setTag("FPS");
-	notifyResized(0, 0, GfxMan.getScreenWidth(), GfxMan.getScreenHeight());
+	notifyResized(glm::ivec2(0, 0), GfxMan.getScreenSize());
 }
 
 void FPS::render(RenderPass pass) {
@@ -73,11 +73,10 @@ void FPS::render(RenderPass pass) {
 	Text::render(pass);
 }
 
-void FPS::notifyResized(int oldWidth, int oldHeight, int newWidth, int newHeight) {
-	float posX = -(newWidth  / 2.0);
-	float posY =  (newHeight / 2.0) - getHeight();
+void FPS::notifyResized(const glm::ivec2 &oldSize, const glm::ivec2 &newSize) {
+	const glm::vec2 position = glm::vec2(-(newSize.x / 2.0), (newSize.y / 2.0) - getSize().y);
 
-	setPosition(posX, posY);
+	setPosition(position);
 }
 
 } // End of namespace Aurora

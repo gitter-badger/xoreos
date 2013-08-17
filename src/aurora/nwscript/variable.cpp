@@ -76,10 +76,10 @@ Variable::Variable(const EngineType &value) : _type(kTypeEngineType) {
 	*this = value;
 }
 
-Variable::Variable(float x, float y, float z) : _type(kTypeVoid) {
+Variable::Variable(const glm::vec3 &value) : _type(kTypeVoid) {
 	setType(kTypeVector);
 
-	setVector(x, y, z);
+	*this = value;
 }
 
 Variable::Variable(const Variable &var) : _type(kTypeVoid) {
@@ -93,6 +93,8 @@ Variable::~Variable() {
 void Variable::setType(Type type) {
 	if      (_type == kTypeString)
 		delete _value._string;
+	else if (_type == kTypeVector)
+		delete _value._vector;
 	else if (_type == kTypeEngineType)
 		delete _value._engineType;
 	else if (_type == kTypeScriptState)
@@ -121,9 +123,7 @@ void Variable::setType(Type type) {
 			break;
 
 		case kTypeVector:
-			_value._vector[0] = 0.0;
-			_value._vector[1] = 0.0;
-			_value._vector[2] = 0.0;
+			_value._vector = new glm::vec3;
 			break;
 
 		case kTypeEngineType:
@@ -148,6 +148,8 @@ Variable &Variable::operator=(const Variable &var) {
 
 	if      (_type == kTypeString)
 		*_value._string = *var._value._string;
+	else if (_type == kTypeVector)
+		*_value._vector = *var._value._vector;
 	else if (_type == kTypeEngineType)
 		*this = var._value._engineType;
 	else if (_type == kTypeScriptState)
@@ -181,6 +183,15 @@ Variable &Variable::operator=(const Common::UString &value) {
 		throw Common::Exception("Can't assign a string value to a non-string variable");
 
 	*_value._string = value;
+
+	return *this;
+}
+
+Variable &Variable::operator=(const glm::vec3 &value) {
+	if (_type != kTypeVector)
+		throw Common::Exception("Can't assign a string value to a non-string variable");
+
+	*_value._vector = value;
 
 	return *this;
 }
@@ -237,9 +248,7 @@ bool Variable::operator==(const Variable &var) const {
 			return _value._object == var._value._object;
 
 		case kTypeVector:
-			return _value._vector[0] == var._value._vector[0] &&
-			       _value._vector[1] == var._value._vector[1] &&
-			       _value._vector[2] == var._value._vector[2];
+			return *_value._vector == *var._value._vector;
 
 		default:
 			break;
@@ -298,22 +307,11 @@ EngineType *Variable::getEngineType() const {
 	return _value._engineType;
 }
 
-void Variable::setVector(float x, float y, float z) {
-	if (_type != kTypeVector)
-		throw Common::Exception("Can't assign a vector value to a non-vector variable");
-
-	_value._vector[0] = x;
-	_value._vector[1] = y;
-	_value._vector[2] = z;
-}
-
-void Variable::getVector(float &x, float &y, float &z) const {
+glm::vec3 Variable::getVector() const {
 	if (_type != kTypeVector)
 		throw Common::Exception("Can't get a vector value from a non-vector variable");
 
-	x = _value._vector[0];
-	y = _value._vector[1];
-	z = _value._vector[2];
+	return *_value._vector;
 }
 
 ScriptState &Variable::getScriptState() {

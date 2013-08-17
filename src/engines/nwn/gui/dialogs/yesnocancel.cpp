@@ -77,10 +77,9 @@ void YesNoCancelDialog::show() {
 	WidgetLabel &msg = *getLabel("MessageLabel", true);
 	WidgetPanel &pnl = *getPanel("PNL_OK"      , true);
 
-	float pX, pY, pZ;
-	pnl.getPosition(pX, pY, pZ);
+	const glm::vec3 p = pnl.getPosition();
 
-	msg.setPosition(pX - msg.getWidth() / 2.0, pY - msg.getHeight() / 2.0, pZ);
+	msg.setPosition(p - glm::vec3(msg.getSize() / 2.0f, 0.0));
 
 	GUI::show();
 }

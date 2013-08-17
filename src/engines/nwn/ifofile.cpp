@@ -77,11 +77,8 @@ void IFOFile::clear() {
 
 	_entryArea.clear();
 
-	_entryX    = 0.0;
-	_entryY    = 0.0;
-	_entryZ    = 0.0;
-	_entryDirX = 0.0;
-	_entryDirY = 0.0;
+	_entryPosition  = glm::vec3(0.0, 0.0, 0.0);
+	_entryDirection = glm::vec2(0.0, 0.0);
 
 	_haks.clear();
 	_areas.clear();
@@ -179,12 +176,12 @@ void IFOFile::load() {
 	}
 
 	// Entry
-	_entryArea = ifoTop.getString("Mod_Entry_Area");
-	_entryX    = ifoTop.getDouble("Mod_Entry_X");
-	_entryY    = ifoTop.getDouble("Mod_Entry_Y");
-	_entryZ    = ifoTop.getDouble("Mod_Entry_Z");
-	_entryDirX = ifoTop.getDouble("Mod_Entry_Dir_X");
-	_entryDirY = ifoTop.getDouble("Mod_Entry_Dir_Y");
+	_entryArea        = ifoTop.getString("Mod_Entry_Area");
+	_entryPosition.x  = ifoTop.getDouble("Mod_Entry_X");
+	_entryPosition.y  = ifoTop.getDouble("Mod_Entry_Y");
+	_entryPosition.z  = ifoTop.getDouble("Mod_Entry_Z");
+	_entryDirection.x = ifoTop.getDouble("Mod_Entry_Dir_X");
+	_entryDirection.y = ifoTop.getDouble("Mod_Entry_Dir_Y");
 
 	// Time settings
 	_hourDawn       = ifoTop.getUint("Mod_DawnHour"  , 0);
@@ -254,15 +251,12 @@ const Common::UString &IFOFile::getEntryArea() const {
 	return _entryArea;
 }
 
-void IFOFile::getEntryPosition(float &x, float &y, float &z) const {
-	x = _entryX;
-	y = _entryY;
-	z = _entryZ;
+glm::vec3 IFOFile::getEntryPosition() const {
+	return _entryPosition;
 }
 
-void IFOFile::getEntryDirection(float &x, float &y) const {
-	x = _entryDirX;
-	y = _entryDirY;
+glm::vec2 IFOFile::getEntryDirection() const {
+	return _entryDirection;
 }
 
 const std::vector<Common::UString> &IFOFile::getHAKs() const {

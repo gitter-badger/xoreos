@@ -447,14 +447,13 @@ void Area::loadTiles() {
 
 			// A tile is 10 units wide and deep.
 			// There's extra special 5x5 tiles at the edges.
-			const float tileX = x * 10.0 + 5.0;
-			const float tileY = y * 10.0 + 5.0;
-
 			// The actual height of a tile is dictated by the tileset.
-			const float tileZ = t.height * _tileset->getTilesHeight();
+			const glm::vec3 tpos = glm::vec3(x * 10.0 + 5.0,
+			                                 y * 10.0 + 5.0,
+			                                 t.height * _tileset->getTilesHeight());
 
-			t.model->setPosition(tileX, tileY, tileZ);
-			t.model->setRotation(0.0, 0.0, -(((int) t.orientation) * 90.0));
+			t.model->setPosition(tpos);
+			t.model->setRotation(glm::vec3(0.0, 0.0, -(((int) t.orientation) * 90.0)));
 		}
 	}
 }
@@ -527,8 +526,9 @@ void Area::processEventQueue() {
 			hasMove = true;
 		} else if (e->type == Events::kEventMouseDown) { // Clicking
 			if (e->button.button == SDL_BUTTON_LMASK) {
-				checkActive(e->button.x, e->button.y);
-				click(e->button.x, e->button.y);
+				const glm::ivec2 point = glm::ivec2(e->button.x, e->button.y);
+				checkActive(point);
+				click(point);
 			}
 		} else if (e->type == Events::kEventKeyDown) { // Holding down TAB
 			if (e->key.keysym.sym == SDLK_TAB)
@@ -545,8 +545,8 @@ void Area::processEventQueue() {
 		checkActive();
 }
 
-Engines::NWN::Object *Area::getObjectAt(int x, int y) {
-	const Graphics::Renderable *obj = GfxMan.getObjectAt(x, y);
+Engines::NWN::Object *Area::getObjectAt(const glm::ivec2 &point) {
+	const Graphics::Renderable *obj = GfxMan.getObjectAt(glm::vec2(point));
 	if (!obj)
 		return 0;
 
@@ -570,25 +570,33 @@ void Area::setActive(Engines::NWN::Object *object) {
 		_activeObject->enter();
 }
 
-void Area::checkActive(int x, int y) {
+void Area::checkActive() {
 	if (!_loaded || _highlightAll)
 		return;
 
 	Common::StackLock lock(_mutex);
 
-	if ((x < 0) || (y < 0))
-		CursorMan.getPosition(x, y);
+	const glm::ivec2 cursor = CursorMan.getPosition();
 
-	setActive(getObjectAt(x, y));
+	setActive(getObjectAt(cursor));
 }
 
-void Area::click(int x, int y) {
+void Area::checkActive(const glm::ivec2 &point) {
+	if (!_loaded || _highlightAll)
+		return;
+
+	Common::StackLock lock(_mutex);
+
+	setActive(getObjectAt(point));
+}
+
+void Area::click(const glm::ivec2 &point) {
 	if (!_loaded)
 		return;
 
 	Common::StackLock lock(_mutex);
 
-	Engines::NWN::Object *o = getObjectAt(x, y);
+	Engines::NWN::Object *o = getObjectAt(point);
 	if (!o)
 		return;
 

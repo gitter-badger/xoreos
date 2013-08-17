@@ -77,28 +77,20 @@ const std::list<uint32> &Object::getIDs() const {
 	return _ids;
 }
 
-void Object::getPosition(float &x, float &y, float &z) const {
-	x = _position[0];
-	y = _position[1];
-	z = _position[2];
+glm::vec3 Object::getPosition() const {
+	return _position;
 }
 
-void Object::getOrientation(float &x, float &y, float &z) const {
-	x = _orientation[0];
-	y = _orientation[1];
-	z = _orientation[2];
+glm::vec3 Object::getOrientation() const {
+	return _orientation;
 }
 
-void Object::setPosition(float x, float y, float z) {
-	_position[0] = x;
-	_position[1] = y;
-	_position[2] = z;
+void Object::setPosition(const glm::vec3 &position) {
+	_position = position;
 }
 
-void Object::setOrientation(float x, float y, float z) {
-	_orientation[0] = x;
-	_orientation[1] = y;
-	_orientation[2] = z;
+void Object::setOrientation(const glm::vec3 &orientation) {
+	_orientation = orientation;
 }
 
 } // End of namespace KotOR

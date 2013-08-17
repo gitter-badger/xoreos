@@ -89,8 +89,8 @@ public:
 	bool startConversation(const Common::UString &conv, Creature &pc,
 	                       Engines::NWN::Object &obj, bool playHello = true);
 
-	void movePC(const Common::UString &area, float x, float y, float z);
-	void movePC(Area *area, float x, float y, float z);
+	void movePC(const Common::UString &area, const glm::vec3 &position);
+	void movePC(Area *area, const glm::vec3 &position);
 	void movedPC();
 
 	void changeModule(const Common::UString &module);

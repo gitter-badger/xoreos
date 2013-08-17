@@ -52,7 +52,7 @@ namespace Engines {
 namespace NWN {
 
 ObjectDistanceSort::ObjectDistanceSort(const Object &target) {
-	target.getPosition(xt, yt, zt);
+	tpos = target.getPosition();
 }
 
 bool ObjectDistanceSort::operator()(Object *a, Object *b) {
@@ -60,10 +60,10 @@ bool ObjectDistanceSort::operator()(Object *a, Object *b) {
 }
 
 float ObjectDistanceSort::getDistance(Object &a) {
-	float x, y, z;
-	a.getPosition(x, y, z);
+	const glm::vec3 p = a.getPosition();
+	const glm::vec3 d = glm::abs(p - tpos);
 
-	return ABS(x - xt) + ABS(y - yt) + ABS(z - zt);
+	return d.x + d.y + d.z;
 }
 
 
@@ -284,7 +284,7 @@ Location *ScriptFunctions::convertLocation(Aurora::NWScript::EngineType *e) {
 	return dynamic_cast<Location *>(e);
 }
 
-void ScriptFunctions::jumpTo(Object *object, Area *area, float x, float y, float z) {
+void ScriptFunctions::jumpTo(Object *object, Area *area, const glm::vec3 &position) {
 	// Sanity check
 	if (!object->getArea() || !area) {
 		warning("ScriptFunctions::jumpTo(): No area?!? (%d, %d)",
@@ -325,7 +325,7 @@ void ScriptFunctions::jumpTo(Object *object, Area *area, float x, float y, float
 	}
 
 	// Update position
-	object->setPosition(x, y, z);
+	object->setPosition(position);
 
 	GfxMan.unlockFrame();
 

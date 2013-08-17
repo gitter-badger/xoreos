@@ -162,7 +162,7 @@ bool EventsManager::parseEventGraphics(const Event &event) {
 	}
 
 	if (event.type == kEventResize) {
-		GfxMan.setScreenSize(event.resize.w, event.resize.h);
+		GfxMan.setScreenSize(glm::ivec2(event.resize.w, event.resize.h));
 		return true;
 	}
 

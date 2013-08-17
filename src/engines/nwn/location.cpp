@@ -54,16 +54,12 @@ void Location::setArea(Area *area) {
 	_area = area;
 }
 
-void Location::getPosition(float &x, float &y, float &z) const {
-	x = _position[0];
-	y = _position[1];
-	z = _position[2];
+glm::vec3 Location::getPosition() const {
+	return _position;
 }
 
-void Location::setPosition(float  x, float  y, float  z) {
-	_position[0] = x;
-	_position[1] = y;
-	_position[2] = z;
+void Location::setPosition(const glm::vec3 &position) {
+	_position = position;
 }
 
 float Location::getFacing() const {

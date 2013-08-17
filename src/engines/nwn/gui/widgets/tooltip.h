@@ -69,7 +69,7 @@ public:
 	void setAlign(float align);
 
 	void updatePosition();
-	void setPosition(float x, float y, float z);
+	void setPosition(const glm::vec3 &position);
 
 	void show();
 	void hide();
@@ -109,15 +109,12 @@ private:
 
 	bool _offscreen;
 
-	float _x;
-	float _y;
-	float _z;
+	glm::vec3 _position;
 
 	float _lineHeight;
 	float _lineSpacing;
 
-	float _width;
-	float _height;
+	glm::vec2 _size;
 
 	Common::UString _font;
 
@@ -129,7 +126,7 @@ private:
 	Common::Mutex _mutex;
 
 
-	void getSize(float &width, float &height);
+	glm::vec2 getSize();
 
 	void checkEmpty();
 	void redoLines();
@@ -143,7 +140,7 @@ private:
 
 	void getFeedbackMode(bool &showBubble, bool &showText, bool &showPortrait) const;
 
-	bool getParentPosition(float &x, float &y, float &z) const;
+	bool getParentPosition(glm::vec3 &position) const;
 
 	static Common::UString getFontName();
 	static Common::UString getBubbleModel(uint32 lines, float width);

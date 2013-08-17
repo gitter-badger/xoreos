@@ -51,8 +51,7 @@ public:
 
 	/** A mip map. */
 	struct MipMap {
-		int    width;             ///< The mip map's width.
-		int    height;            ///< The mip map's height.
+		glm::uvec2 size;          ///< The mip map's size.
 		std::vector< byte > data; ///< The mip map's data.
 
 		MipMap();

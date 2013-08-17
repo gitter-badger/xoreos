@@ -55,10 +55,10 @@ public:
 	void enter();
 	void leave();
 
-	void setPosition(float x, float y, float z);
+	void setPosition(const glm::vec3 &position);
 
 	void setTooltip(const Common::UString &text);
-	void setTooltipPosition(float x, float y, float z);
+	void setTooltipPosition(const glm::vec3 &position);
 
 private:
 	Tooltip *_tooltip;

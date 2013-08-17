@@ -108,15 +108,15 @@ void Renderable::hide() {
 	removeFromQueue(_queueVisible);
 }
 
-bool Renderable::isIn(float x, float y) const {
+bool Renderable::isIn(const glm::vec2 &point) const {
 	return false;
 }
 
-bool Renderable::isIn(float x, float y, float z) const {
+bool Renderable::isIn(const glm::vec3 &point) const {
 	return false;
 }
 
-bool Renderable::isIn(float x1, float y1, float z1, float x2, float y2, float z2) const {
+bool Renderable::isIn(const std::pair<glm::vec3, glm::vec3> &line) const {
 	return false;
 }
 

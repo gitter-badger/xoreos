@@ -59,7 +59,7 @@ void WidgetButton::load(const Aurora::GFFStruct &gff) {
 	}
 }
 
-void WidgetButton::mouseUp(uint8 state, float x, float y) {
+void WidgetButton::mouseUp(uint8 state, const glm::vec2 &point) {
 	if (isDisabled())
 		return;
 

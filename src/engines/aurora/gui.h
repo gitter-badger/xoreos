@@ -90,10 +90,10 @@ protected:
 	int sub(GUI &gui, int startCode = 0, bool showSelf = true);
 
 	/** Set the GUI's position. */
-	void setPosition(float x, float y, float z);
+	void setPosition(const glm::vec3 &position);
 
 	/** Get the GUI's position. */
-	void getPosition(float &x, float &y, float &z) const;
+	glm::vec3 getPosition() const;
 
 	/** Callback that's triggered periodically in the run() method. */
 	virtual void callbackRun();
@@ -107,14 +107,12 @@ private:
 	WidgetList _widgets;   ///< All widgets in the GUI.
 	WidgetMap  _widgetMap; ///< All widgets in the GUI, index by their tag.
 
-	float _x; ///< The GUI X position.
-	float _y; ///< The GUI Y position.
-	float _z; ///< The GUI Z position.
+	glm::vec3 _position; ///< The GUI position.
 
 	std::list<Events::Event> _eventQueue; ///< The GUI event queue.
 
 	/** Return the widget at that position. */
-	Widget *getWidgetAt(float x, float y);
+	Widget *getWidgetAt(const glm::vec2 &point);
 
 	void changedWidget(Widget *widget);     ///< The current widget has changed.
 	void checkWidgetActive(Widget *widget); ///< Check if a widget was activated.
@@ -123,8 +121,7 @@ private:
 	void mouseDown(const Events::Event &event); ///< Mouse down event triggered.
 	void mouseUp  (const Events::Event &event); ///< Mouse up event triggered.
 
-	float toGUIX(int x); // Convert an event X coordinate to a GUI X coordinate
-	float toGUIY(int y); // Convert an event Y coordinate to a GUI Y coordinate
+	glm::vec2 toGUI(const glm::ivec2 &event); // Convert an event coordinate to a GUI coordinate
 
 	/** Send a mouse move event to the widget. */
 	void mouseMove(Widget *widget, const Events::Event &event);

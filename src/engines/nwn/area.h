@@ -234,13 +234,14 @@ private:
 
 	// Highlight / active helpers
 
-	void checkActive(int x = -1, int y = -1);
+	void checkActive();
+	void checkActive(const glm::ivec2 &point);
 	void setActive(Engines::NWN::Object *object);
-	Engines::NWN::Object *getObjectAt(int x, int y);
+	Engines::NWN::Object *getObjectAt(const glm::ivec2 &point);
 
 	void highlightAll(bool enabled);
 
-	void click(int x, int y);
+	void click(const glm::ivec2 &point);
 
 
 	static Common::UString createDisplayName(const Common::UString &name);

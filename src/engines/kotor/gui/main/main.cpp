@@ -108,10 +108,9 @@ void MainMenu::initWidget(Widget &widget) {
 
 	// New game button. Forcibly move it to the front, for the Xbox version
 	if (widget.getTag() == "BTN_NEWGAME") {
-		float x, y, z;
-		widget.getPosition(x, y, z);
+		const glm::vec3 position = widget.getPosition();
 
-		widget.setPosition(x, y, z - 10.0);
+		widget.setPosition(position - glm::vec3(0.0, 0.0, -10.0));
 	}
 }
 

@@ -183,8 +183,9 @@ void XboxMediaVideo::load() {
 	if ((version == 0) || (version > 4))
 		throw Common::Exception("XboxMediaVideo::load(): Unsupported version %d", version);
 
-	uint32 width    = _xmv->readUint32LE();
-	uint32 height   = _xmv->readUint32LE();
+	glm::uvec2 size;
+	size.x = _xmv->readUint32LE();
+	size.y = _xmv->readUint32LE();
 
 	_xmv->skip(4); // Duration in ms
 
@@ -206,7 +207,7 @@ void XboxMediaVideo::load() {
 
 
 	// Initialize the video
-	initVideo(width, height);
+	initVideo(size);
 
 	// Initialize the sound: Find the first supported audio track for now
 	for (uint32 i = 0; i < audioTrackCount; i++) {
@@ -383,7 +384,7 @@ void XboxMediaVideo::processPacketHeader(Packet &packet) {
 			delete _videoCodec;
 			_videoCodec = 0;
 
-			_videoCodec = new XMVWMV2Codec(_width, _height, extraData);
+			_videoCodec = new XMVWMV2Codec(_size.x, _size.y, extraData);
 
 			packet.video.dataSize   -= 4;
 			packet.video.dataOffset += 4;

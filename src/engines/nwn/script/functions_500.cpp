@@ -814,11 +814,10 @@ void ScriptFunctions::setCampaignVector(Aurora::NWScript::FunctionContext &ctx) 
 	const Common::UString &dbName  = ctx.getParams()[0].getString();
 	const Common::UString &varName = ctx.getParams()[1].getString();
 
-	float x, y, z;
-	ctx.getParams()[2].getVector(x, y, z);
+	const glm::vec3 position = ctx.getParams()[2].getVector();
 
 	warning("TODO: SetCampaignVector: \"%s\":\"%s\" to %f, %f, %f",
-			dbName.c_str(), varName.c_str(), x, y, z);
+			dbName.c_str(), varName.c_str(), position.x, position.y, position.z);
 }
 
 void ScriptFunctions::setCampaignLocation(Aurora::NWScript::FunctionContext &ctx) {
@@ -865,7 +864,7 @@ void ScriptFunctions::getCampaignInt(Aurora::NWScript::FunctionContext &ctx) {
 }
 
 void ScriptFunctions::getCampaignVector(Aurora::NWScript::FunctionContext &ctx) {
-	ctx.getReturn().setVector(0.0f, 0.0f, 0.0f);
+	ctx.getReturn() = glm::vec3(0.0f, 0.0f, 0.0f);
 
 	const Common::UString &dbName  = ctx.getParams()[0].getString();
 	const Common::UString &varName = ctx.getParams()[1].getString();

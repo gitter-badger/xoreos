@@ -50,7 +50,7 @@ OptionsFeedbackMenu::OptionsFeedbackMenu(bool isMain) {
 
 	if (isMain) {
 		WidgetPanel *backdrop = new WidgetPanel(*this, "PNL_MAINMENU", "pnl_mainmenu");
-		backdrop->setPosition(0.0, 0.0, 100.0);
+		backdrop->setPosition(glm::vec3(0.0, 0.0, 100.0));
 		addWidget(backdrop);
 	}
 

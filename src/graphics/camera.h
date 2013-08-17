@@ -43,19 +43,19 @@ public:
 	void lock();
 	void unlock();
 
-	const float *getPosition   () const; ///< Get the current camera position.
-	const float *getOrientation() const; ///< Get the current camera orientation.
+	glm::vec3 getPosition   () const; ///< Get the current camera position.
+	glm::vec3 getOrientation() const; ///< Get the current camera orientation.
 
 	void reset(); ///< Reset the current position and orientation.
 
-	void setPosition   (float x, float y, float z); ///< Set the camera position.
-	void setOrientation(float x, float y, float z); ///< Set the camera orientation.
+	void setPosition   (const glm::vec3 &position);    ///< Set the camera position.
+	void setOrientation(const glm::vec3 &orientation); ///< Set the camera orientation.
 
 	/** Set orientation from unit vector describing the bearing in the xy plane. */
-	void setOrientation(float vX, float vY);
+	void setOrientation(const glm::vec2 &orientation);
 
-	void turn(float x, float y, float z); ///< Turn along axes.
-	void move(float x, float y, float z); ///< Move along axes.
+	void turn(const glm::vec3 &amount); ///< Turn along axes.
+	void move(const glm::vec3 &amount); ///< Move along axes.
 
 	void move  (float n); ///< Move along current view axis.
 	void strafe(float n); ///< Move orthogonal (left/right) to current view axis.
@@ -68,8 +68,8 @@ private:
 
 	uint32 _lastChanged;
 
-	float _position[3];    ///< Current position.
-	float _orientation[3]; ///< Current orientation.
+	glm::vec3 _position;
+	glm::vec3 _orientation;
 };
 
 } // End of namespace Graphics

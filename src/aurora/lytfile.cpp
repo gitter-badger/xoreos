@@ -76,9 +76,9 @@ void LYTFile::load(Common::SeekableReadStream &lyt) {
 				tokenizer.getTokens(lyt, strings);
 
 				_rooms[i].model = strings[0];
-				strings[1].parse(_rooms[i].x);
-				strings[2].parse(_rooms[i].y);
-				strings[3].parse(_rooms[i].z);
+				strings[1].parse(_rooms[i].position.x);
+				strings[2].parse(_rooms[i].position.y);
+				strings[3].parse(_rooms[i].position.z);
 			}
 		} else if (strings[0] == "trackcount") {
 			int trackCount = atoi(strings[1].c_str());
@@ -122,9 +122,9 @@ void LYTFile::load(Common::SeekableReadStream &lyt) {
 
 				_doorHooks[i].name = strings[0];
 				strings[1].parse(_doorHooks[i].unk0);
-				strings[2].parse(_doorHooks[i].x);
-				strings[3].parse(_doorHooks[i].y);
-				strings[4].parse(_doorHooks[i].z);
+				strings[2].parse(_doorHooks[i].position.x);
+				strings[3].parse(_doorHooks[i].position.y);
+				strings[4].parse(_doorHooks[i].position.z);
 				strings[5].parse(_doorHooks[i].unk1);
 				strings[6].parse(_doorHooks[i].unk2);
 				strings[7].parse(_doorHooks[i].unk3);

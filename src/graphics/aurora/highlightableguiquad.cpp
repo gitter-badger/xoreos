@@ -30,9 +30,9 @@ namespace Graphics {
 namespace Aurora {
 
 HighlightableGUIQuad::HighlightableGUIQuad(const Common::UString &texture,
-		float x1, float y1, float x2, float y2,
-		float tX1, float tY1, float tX2, float tY2) :
-	GUIQuad (texture, x1, y1, x2, y2, tX1, tY1, tX2, tY2) {
+	        const glm::vec2 &p1, const glm::vec2 &p2,
+	        const glm::vec2 &t1, const glm::vec2 &t2) :
+	GUIQuad (texture, p1, p2, t1, t2) {
 }
 
 HighlightableGUIQuad::~HighlightableGUIQuad() {

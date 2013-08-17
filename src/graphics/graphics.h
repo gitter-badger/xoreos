@@ -38,7 +38,6 @@
 #include "common/types.h"
 #include "common/singleton.h"
 #include "common/mutex.h"
-#include "common/matrix.h"
 
 namespace Common {
 	class UString;
@@ -70,21 +69,17 @@ public:
 	bool supportMultipleTextures() const;
 
 	/** Set the screen size. */
-	void setScreenSize(int width, int height);
+	void setScreenSize(const glm::ivec2 &size);
 	/** Set full screen/windowed mode. */
 	void setFullScreen(bool fullScreen);
 	/** Toggle between full screen and windowed mode. */
 	void toggleFullScreen();
 
-	/** Return the current screen width. */
-	int getScreenWidth() const;
-	/** Return the current screen height. */
-	int getScreenHeight() const;
+	/** Return the current screen [width,height]. */
+	glm::ivec2 getScreenSize() const;
 
-	/** Return the system's screen width. */
-	int getSystemWidth() const;
-	/** Return the system's screen height. */
-	int getSystemHeight() const;
+	/** Return the system's screen [width,height]. */
+	glm::ivec2 getSystemSize() const;
 
 	/** Are we currently in full screen mode? */
 	bool isFullScreen() const;
@@ -121,15 +116,13 @@ public:
 	void takeScreenshot();
 
 	/** Map the given world coordinates onto screen coordinates. */
-	bool project(float x, float y, float z, float &sX, float &sY, float &sZ);
+	bool project(const glm::vec3 &world, glm::vec3 &screen);
 
 	/** Map the given screen coordinates onto a line in world space. */
-	bool unproject(float x, float y,
-	               float &x1, float &y1, float &z1,
-	               float &x2, float &y2, float &z2) const;
+	bool unproject(const glm::vec2 &screen, std::pair<glm::vec3, glm::vec3> &line) const;
 
 	/** Get the object at this screen position. */
-	Renderable *getObjectAt(float x, float y);
+	Renderable *getObjectAt(const glm::vec2 &screen);
 
 	/** Recalculate all object distances to the camera and resort the objebts. */
 	void recalculateObjectDistances();
@@ -170,8 +163,7 @@ private:
 	int _fsaa;    ///< Current FSAA settings.
 	int _fsaaMax; ///< Max supported FSAA level.
 
-	int _systemWidth;  ///< The system's screen width.
-	int _systemHeight; ///< The system's screen height.
+	glm::ivec2 _systemSize;  ///< The system's screen [width,height].
 
 	float _gamma; ///< The current gamma correction value.
 
@@ -179,8 +171,8 @@ private:
 
 	FPSCounter *_fpsCounter; ///< Counts the current frames per seconds value.
 	uint32 _lastSampled; ///< Timestamp used to advance animations.
-	Common::Matrix _projection;    ///< Our projection matrix.
-	Common::Matrix _projectionInv; ///< The inverse of our projection matrix.
+	glm::mat4 _projection;    ///< Our projection matrix.
+	glm::mat4 _projectionInv; ///< The inverse of our projection matrix.
 
 	uint32 _frameLock;
 
@@ -202,12 +194,12 @@ private:
 
 	Common::Mutex _abandonMutex; ///< A mutex protecting abandoned structures.
 
-	void initSize(int width, int height, bool fullscreen);
+	void initSize(const glm::ivec2 &size, bool fullscreen);
 	void setupScene();
 
-	int probeFSAA(int width, int height, int bpp, uint32 flags);
+	int probeFSAA(const glm::ivec2 &size, int bpp, uint32 flags);
 
-	bool setupSDLGL(int width, int height, int bpp, uint32 flags);
+	bool setupSDLGL(const glm::ivec2 &size, int bpp, uint32 flags);
 	void checkGLExtensions();
 
 	/** Set up a projection matrix. Analog to gluPerspective. */
@@ -223,8 +215,8 @@ private:
 
 	void cleanupAbandoned();
 
-	Renderable *getGUIObjectAt(float x, float y) const;
-	Renderable *getWorldObjectAt(float x, float y) const;
+	Renderable *getGUIObjectAt(const glm::vec2 &screen) const;
+	Renderable *getWorldObjectAt(const glm::vec2 &screen) const;
 
 	void buildNewTextures();
 

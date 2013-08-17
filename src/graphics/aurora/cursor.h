@@ -43,7 +43,7 @@ namespace Aurora {
 /** A cursor as used in the Aurora engines. */
 class Cursor : public Graphics::Cursor {
 public:
-	Cursor(const Common::UString &name, int hotspotX = -1, int hotspotY = -1);
+	Cursor(const Common::UString &name, const glm::ivec2 &hotspot = glm::ivec2(-1, -1));
 	~Cursor();
 
 	/** Render the cursor. */
@@ -54,11 +54,8 @@ private:
 
 	TextureHandle _texture;
 
-	int _width;
-	int _height;
-
-	int _hotspotX;
-	int _hotspotY;
+	glm::uvec2 _size;
+	glm::ivec2 _hotspot;
 
 	void load();
 };

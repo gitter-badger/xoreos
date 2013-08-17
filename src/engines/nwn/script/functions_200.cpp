@@ -532,10 +532,9 @@ void ScriptFunctions::actionJumpToLocation(Aurora::NWScript::FunctionContext &ct
 	if (!object || !moveTo)
 		return;
 
-	float x, y, z;
-	moveTo->getPosition(x, y, z);
+	const glm::vec3 position = moveTo->getPosition();
 
-	jumpTo(object, moveTo->getArea(), x, y, z);
+	jumpTo(object, moveTo->getArea(), position);
 }
 
 void ScriptFunctions::location(Aurora::NWScript::FunctionContext &ctx) {
@@ -544,9 +543,8 @@ void ScriptFunctions::location(Aurora::NWScript::FunctionContext &ctx) {
 	loc.setArea  (convertArea(ctx.getParams()[0].getObject()));
 	loc.setFacing(ctx.getParams()[2].getFloat());
 
-	float x, y, z;
-	ctx.getParams()[1].getVector(x, y, z);
-	loc.setPosition(x, y, z);
+	const glm::vec3 position = ctx.getParams()[1].getVector();
+	loc.setPosition(position);
 
 	ctx.getReturn() = loc;
 }
@@ -589,16 +587,15 @@ void ScriptFunctions::getSpellTargetLocation(Aurora::NWScript::FunctionContext &
 }
 
 void ScriptFunctions::getPositionFromLocation(Aurora::NWScript::FunctionContext &ctx) {
-	ctx.getReturn().setVector(0.0f, 0.0f, 0.0f);
+	ctx.getReturn() = glm::vec3(0.0f, 0.0f, 0.0f);
 
 	Location *loc = convertLocation(ctx.getParams()[0].getEngineType());
 	if (!loc)
 		return;
 
-	float x, y, z;
-	loc->getPosition(x, y, z);
+	const glm::vec3 position = loc->getPosition();
 
-	ctx.getReturn().setVector(x, y, z);
+	ctx.getReturn() = position;
 }
 
 void ScriptFunctions::getAreaFromLocation(Aurora::NWScript::FunctionContext &ctx) {

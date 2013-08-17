@@ -62,16 +62,15 @@ public:
 	const Widget *getParent() const;
 
 	/** Set the widget's position. */
-	virtual void setPosition(float x, float y, float z);
+	virtual void setPosition(const glm::vec3 &position);
 
 	/** Move the widget, relative to its current position. */
-	virtual void movePosition(float x, float y, float z);
+	virtual void movePosition(const glm::vec3 &amount);
 
 	/** Get the widget's position. */
-	virtual void getPosition(float &x, float &y, float &z) const;
+	virtual glm::vec3 getPosition() const;
 
-	virtual float getWidth () const; ///< Get the widget's width.
-	virtual float getHeight() const; ///< Get the widget's height.
+	virtual glm::vec2 getSize() const; ///< Get the widget's [width,height].
 
 	virtual void setDisabled(bool disabled);   ///< Disable/Enable the widget.
 	virtual void setInvisible(bool invisible); ///< Make the widget invisible.
@@ -80,14 +79,14 @@ public:
 	virtual void leave(); ///< The mouse left the widget.
 
 	/** The mouse was moved over the widget. */
-	virtual void mouseMove(uint8 state, float x, float y);
+	virtual void mouseMove(uint8 state, const glm::vec2 &point);
 	/** A mouse button was pressed on the widget. */
-	virtual void mouseDown(uint8 state, float x, float y);
+	virtual void mouseDown(uint8 state, const glm::vec2 &point);
 	/** A mouse button was released on the widget. */
-	virtual void mouseUp  (uint8 state, float x, float y);
+	virtual void mouseUp  (uint8 state, const glm::vec2 &point);
 
 	/** A mouse button was double-clicked on the widget. */
-	virtual void mouseDblClick(uint8 state, float x, float y);
+	virtual void mouseDblClick(uint8 state, const glm::vec2 &point);
 
 	/** A sub-widget was activated. */
 	virtual void subActive(Widget &widget);
@@ -125,14 +124,11 @@ private:
 	bool _disabled;  ///< Is the widget disabled?
 	bool _invisible; ///< Is the widget invisible (never visible)?
 
-	float _x; ///< The widget X position.
-	float _y; ///< The widget Y position.
-	float _z; ///< The widget Z position.
+	glm::vec3 _position; ///< The widget X position.
 
-	uint8  _lastClickButton;
-	uint32 _lastClickTime;
-	float  _lastClickX;
-	float  _lastClickY;
+	uint8     _lastClickButton;
+	uint32    _lastClickTime;
+	glm::vec2 _lastClickPosition;
 
 	friend class GUI;
 };

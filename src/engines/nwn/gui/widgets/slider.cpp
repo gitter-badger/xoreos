@@ -45,7 +45,7 @@ WidgetSlider::WidgetSlider(::Engines::GUI &gui, const Common::UString &tag,
 
 	_model->setClickable(true);
 
-	_width = getWidth();
+	_width = getSize().x;
 
 	_thumb = _model->getNode("thumb");
 
@@ -57,8 +57,8 @@ WidgetSlider::WidgetSlider(::Engines::GUI &gui, const Common::UString &tag,
 WidgetSlider::~WidgetSlider() {
 }
 
-void WidgetSlider::setPosition(float x, float y, float z) {
-	ModelWidget::setPosition(x, y, z);
+void WidgetSlider::setPosition(const glm::vec3 &position) {
+	ModelWidget::setPosition(position);
 }
 
 void WidgetSlider::setSteps(int steps) {
@@ -75,7 +75,7 @@ void WidgetSlider::setState(int state) {
 	changePosition(CLIP(((float) _state) / _steps, 0.0f, 1.0f));
 }
 
-void WidgetSlider::mouseMove(uint8 state, float x, float y) {
+void WidgetSlider::mouseMove(uint8 state, const glm::vec2 &point) {
 	if (isDisabled())
 		return;
 
@@ -83,24 +83,23 @@ void WidgetSlider::mouseMove(uint8 state, float x, float y) {
 		// We only care about moves with the left mouse button pressed
 		return;
 
-	changedValue(x, y);
+	changedValue(point);
 }
 
-void WidgetSlider::mouseDown(uint8 state, float x, float y) {
+void WidgetSlider::mouseDown(uint8 state, const glm::vec2 &point) {
 	if (isDisabled())
 		return;
 
 	if (state != SDL_BUTTON_LMASK)
 		return;
 
-	changedValue(x, y);
+	changedValue(point);
 }
 
-void WidgetSlider::changedValue(float x, float y) {
-	float curX, curY, curZ;
-	getPosition(curX, curY, curZ);
+void WidgetSlider::changedValue(const glm::vec2 &point) {
+	const glm::vec3 cur = getPosition();
 
-	float pX    = CLIP(x - curX, 0.0f, _width) / _width;
+	float pX    = CLIP(point.x - cur.x, 0.0f, _width) / _width;
 	int   state = roundf(pX * _steps);
 
 	if (state == _state)
@@ -120,9 +119,9 @@ void WidgetSlider::changedValue(float x, float y) {
 }
 
 void WidgetSlider::changePosition(float value) {
-	value = (value * _width) - (_thumb->getWidth() / 2.0);
+	value = (value * _width) - (_thumb->getSize().x / 2.0);
 
-	_thumb->move(-_position + value, 0.0, 0.0);
+	_thumb->move(glm::vec3(-_position + value, 0.0, 0.0));
 
 	_position = value;
 }

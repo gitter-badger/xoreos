@@ -29,6 +29,7 @@
 
 #include <SDL_timer.h>
 
+#include "common/maths.h"
 #include "common/stream.h"
 #include "common/debug.h"
 
@@ -87,52 +88,35 @@ const Common::UString &Model::getName() const {
 	return _name;
 }
 
-bool Model::isIn(float x, float y) const {
+bool Model::isIn(const glm::vec2 &point) const {
 	if (_type == kModelTypeGUIFront) {
-		x /= _modelScale[0];
-		y /= _modelScale[1];
+		const glm::vec2 p = point / glm::vec2(_modelScale);
+		const glm::vec2 min = glm::vec2(_position);
+		const glm::vec2 max = min + glm::vec2(_boundBox.getSize());
 
-		const float minX = _position[0];
-		const float minY = _position[1];
-		const float maxX = minX + _boundBox.getWidth();
-		const float maxY = minY + _boundBox.getHeight();
-
-		if ((x < minX) || (x > maxX))
-			return false;
-		if ((y < minY) || (y > maxY))
-			return false;
-
-		return true;
+		return Common::insideOf(p, min, max);
 	}
 
 
-	return _absoluteBoundBox.isIn(x, y);
+	return _absoluteBoundBox.isIn(point);
 }
 
-bool Model::isIn(float x, float y, float z) const {
+bool Model::isIn(const glm::vec3 &point) const {
 	if (_type == kModelTypeGUIFront)
-		return isIn(x, y);
+		return isIn(glm::vec2(point));
 
-	return _absoluteBoundBox.isIn(x, y, z);
+	return _absoluteBoundBox.isIn(point);
 }
 
-bool Model::isIn(float x1, float y1, float z1, float x2, float y2, float z2) const {
+bool Model::isIn(const std::pair<glm::vec3, glm::vec3> &line) const {
 	if (_type == kModelTypeGUIFront)
 		return false;
 
-	return _absoluteBoundBox.isIn(x1, y1, z1, x2, y2, z2);
+	return _absoluteBoundBox.isIn(line);
 }
 
-float Model::getWidth() const {
-	return _boundBox.getWidth() * _modelScale[0];
-}
-
-float Model::getHeight() const {
-	return _boundBox.getHeight() * _modelScale[1];
-}
-
-float Model::getDepth() const {
-	return _boundBox.getDepth() * _modelScale[2];
+glm::vec3 Model::getSize() const {
+	return _boundBox.getSize() * _modelScale;
 }
 
 void Model::drawBound(bool enabled) {
@@ -168,30 +152,22 @@ Animation *Model::selectDefaultAnimation() const {
 	return 0;
 }
 
-void Model::getPosition(float &x, float &y, float &z) const {
-	x = _position[0] * _modelScale[0];
-	y = _position[1] * _modelScale[1];
-	z = _position[2] * _modelScale[2];
+glm::vec3 Model::getPosition() const {
+	return _position * _modelScale;
 }
 
-void Model::getRotation(float &x, float &y, float &z) const {
-	x = _rotation[0];
-	y = _rotation[1];
-	z = _rotation[2];
+glm::vec3 Model::getRotation() const {
+	return _rotation;
 }
 
-void Model::getAbsolutePosition(float &x, float &y, float &z) const {
-	x = _absolutePosition.getX();
-	y = _absolutePosition.getY();
-	z = _absolutePosition.getZ();
+glm::vec3 Model::getAbsolutePosition() const {
+	return glm::vec3(glm::column(_absolutePosition, 4));
 }
 
-void Model::setPosition(float x, float y, float z) {
+void Model::setPosition(const glm::vec3 &position) {
 	GfxMan.lockFrame();
 
-	_position[0] = x / _modelScale[0];
-	_position[1] = y / _modelScale[1];
-	_position[2] = z / _modelScale[2];
+	_position = position / _modelScale;
 
 	createAbsolutePosition();
 	calculateDistance();
@@ -202,12 +178,10 @@ void Model::setPosition(float x, float y, float z) {
 	GfxMan.unlockFrame();
 }
 
-void Model::setRotation(float x, float y, float z) {
+void Model::setRotation(const glm::vec3 &rotation) {
 	GfxMan.lockFrame();
 
-	_rotation[0] = x;
-	_rotation[1] = y;
-	_rotation[2] = z;
+	_rotation = rotation;
 
 	createAbsolutePosition();
 	calculateDistance();
@@ -218,39 +192,31 @@ void Model::setRotation(float x, float y, float z) {
 	GfxMan.unlockFrame();
 }
 
-void Model::move(float x, float y, float z) {
-	x /= _modelScale[0];
-	y /= _modelScale[1];
-	z /= _modelScale[2];
-
-	setPosition(_position[0] + x, _position[1] + y, _position[2] + z);
+void Model::move(const glm::vec3 &amount) {
+	setPosition(getPosition() + amount);
 }
 
-void Model::rotate(float x, float y, float z) {
-	setRotation(_rotation[0] + x, _rotation[1] + y, _rotation[2] + z);
+void Model::rotate(const glm::vec3 &amount) {
+	setRotation(_rotation + amount);
 }
 
-void Model::getTooltipAnchor(float &x, float &y, float &z) const {
-	Common::TransformationMatrix pos = _absolutePosition;
-
-	pos.translate(0.0, 0.0, _absoluteBoundBox.getHeight() + 0.5);
-
-	pos.getPosition(x, y, z);
+glm::vec3 Model::getTooltipAnchor() const {
+	return glm::vec3(glm::column(glm::translate(_absolutePosition, glm::vec3(0.0, 0.0, _absoluteBoundBox.getSize().z + 0.5)), 4));
 }
 
 void Model::createAbsolutePosition() {
-	_absolutePosition.loadIdentity();
+	_absolutePosition = glm::mat4();
 
-	_absolutePosition.scale(_modelScale[0], _modelScale[1], _modelScale[2]);
+	_absolutePosition = glm::scale(_absolutePosition, _modelScale);
 
 	if (_type == kModelTypeObject)
-		_absolutePosition.rotate(90.0, -1.0, 0.0, 0.0);
+		_absolutePosition = glm::rotate(_absolutePosition, 90.0f, glm::vec3(-1.0, 0.0, 0.0));
 
-	_absolutePosition.translate(_position[0], _position[1], _position[2]);
+	_absolutePosition = glm::translate(_absolutePosition, _position);
 
-	_absolutePosition.rotate( _rotation[0], 1.0, 0.0, 0.0);
-	_absolutePosition.rotate( _rotation[1], 0.0, 1.0, 0.0);
-	_absolutePosition.rotate(-_rotation[2], 0.0, 0.0, 1.0);
+	_absolutePosition = glm::rotate(_absolutePosition,  _rotation[0], glm::vec3(1.0, 0.0, 0.0));
+	_absolutePosition = glm::rotate(_absolutePosition,  _rotation[1], glm::vec3(0.0, 1.0, 0.0));
+	_absolutePosition = glm::rotate(_absolutePosition, -_rotation[2], glm::vec3(0.0, 0.0, 1.0));
 
 	_absoluteBoundBox = _boundBox;
 	_absoluteBoundBox.transform(_absolutePosition);
@@ -383,22 +349,14 @@ void Model::calculateDistance() {
 		return;
 	}
 
+	const glm::mat4 center = glm::translate(_absolutePosition, _center);
 
-	Common::TransformationMatrix center = _absolutePosition;
+	glm::vec4 camera = glm::vec4(CameraMan.getPosition(), 0.0f);
+	camera.z = -camera.z;
 
-	center.translate(_center[0], _center[1], _center[2]);
+	const glm::vec4 position = glm::abs(glm::column(center, 4) - camera);
 
-
-	const float cameraX =  CameraMan.getPosition()[0];
-	const float cameraY =  CameraMan.getPosition()[1];
-	const float cameraZ = -CameraMan.getPosition()[2];
-
-	const float x = ABS(center.getX() - cameraX);
-	const float y = ABS(center.getY() - cameraY);
-	const float z = ABS(center.getZ() - cameraZ);
-
-
-	_distance = x + y + z;
+	_distance = position.x + position.y + position.z;
 }
 
 bool Model::buildList(RenderPass pass) {
@@ -521,50 +479,49 @@ void Model::doDrawBound() {
 
 	Common::BoundingBox object = _boundBox;
 
-	float minX, minY, minZ, maxX, maxY, maxZ;
-	object.getMin(minX, minY, minZ);
-	object.getMax(maxX, maxY, maxZ);
+	const glm::vec3 min = object.getMin();
+	const glm::vec3 max = object.getMax();
 
 	glBegin(GL_LINE_LOOP);
-		glVertex3f(minX, minY, minZ);
-		glVertex3f(maxX, minY, minZ);
-		glVertex3f(maxX, maxY, minZ);
-		glVertex3f(minX, maxY, minZ);
+		glVertex3f(min.x, min.y, min.z);
+		glVertex3f(max.x, min.y, min.z);
+		glVertex3f(max.x, max.y, min.z);
+		glVertex3f(min.x, max.y, min.z);
 	glEnd();
 
 	glBegin(GL_LINE_LOOP);
-		glVertex3f(minX, minY, maxZ);
-		glVertex3f(maxX, minY, maxZ);
-		glVertex3f(maxX, maxY, maxZ);
-		glVertex3f(minX, maxY, maxZ);
+		glVertex3f(min.x, min.y, max.z);
+		glVertex3f(max.x, min.y, max.z);
+		glVertex3f(max.x, max.y, max.z);
+		glVertex3f(min.x, max.y, max.z);
 	glEnd();
 
 	glBegin(GL_LINE_LOOP);
-		glVertex3f(minX, minY, minZ);
-		glVertex3f(minX, maxY, minZ);
-		glVertex3f(minX, maxY, maxZ);
-		glVertex3f(minX, minY, maxZ);
+		glVertex3f(min.x, min.y, min.z);
+		glVertex3f(min.x, max.y, min.z);
+		glVertex3f(min.x, max.y, max.z);
+		glVertex3f(min.x, min.y, max.z);
 	glEnd();
 
 	glBegin(GL_LINE_LOOP);
-		glVertex3f(maxX, minY, minZ);
-		glVertex3f(maxX, maxY, minZ);
-		glVertex3f(maxX, maxY, maxZ);
-		glVertex3f(maxX, minY, maxZ);
+		glVertex3f(max.x, min.y, min.z);
+		glVertex3f(max.x, max.y, min.z);
+		glVertex3f(max.x, max.y, max.z);
+		glVertex3f(max.x, min.y, max.z);
 	glEnd();
 
 	glBegin(GL_LINE_LOOP);
-		glVertex3f(minX, minY, minZ);
-		glVertex3f(maxX, minY, minZ);
-		glVertex3f(maxX, minY, maxZ);
-		glVertex3f(minX, minY, maxZ);
+		glVertex3f(min.x, min.y, min.z);
+		glVertex3f(max.x, min.y, min.z);
+		glVertex3f(max.x, min.y, max.z);
+		glVertex3f(min.x, min.y, max.z);
 	glEnd();
 
 	glBegin(GL_LINE_LOOP);
-		glVertex3f(minX, maxY, minZ);
-		glVertex3f(maxX, maxY, minZ);
-		glVertex3f(maxX, maxY, maxZ);
-		glVertex3f(minX, maxY, maxZ);
+		glVertex3f(min.x, max.y, min.z);
+		glVertex3f(max.x, max.y, min.z);
+		glVertex3f(max.x, max.y, max.z);
+		glVertex3f(min.x, max.y, max.z);
 	glEnd();
 }
 
@@ -626,13 +583,10 @@ void Model::createBound() {
 		_boundBox.add((*n)->getAbsoluteBound());
 	}
 
-	float minX, minY, minZ, maxX, maxY, maxZ;
-	_boundBox.getMin(minX, minY, minZ);
-	_boundBox.getMax(maxX, maxY, maxZ);
+	const glm::vec3 min = _boundBox.getMin();
+	const glm::vec3 max = _boundBox.getMax();
 
-	_center[0] = minX + ((maxX - minX) / 2.0);
-	_center[1] = minY + ((maxY - minY) / 2.0);
-	_center[2] = minZ + ((maxZ - minZ) / 2.0);
+	_center = min + ((max - min) / 2.0f);
 
 
 	_absoluteBoundBox = _boundBox;

@@ -304,15 +304,13 @@ bool Module::enter() {
 		return false;
 	}
 
-	float entryX, entryY, entryZ, entryDirX, entryDirY;
-	_ifo.getEntryPosition(entryX, entryY, entryZ);
-	_ifo.getEntryDirection(entryDirX, entryDirY);
+	const glm::vec3 entry = _ifo.getEntryPosition();
+	const glm::vec2 direction = _ifo.getEntryDirection();
 
-	float orientX, orientY, orientZ;
-	Common::vector2orientation(entryDirX, entryDirY, orientX, orientY, orientZ);
+	const glm::vec3 orientation = Common::vector2orientation(direction);
 
-	_pc->setPosition(entryX, entryY, entryZ);
-	_pc->setOrientation(orientX, orientY, orientZ);
+	_pc->setPosition(entry);
+	_pc->setOrientation(orientation);
 
 	_pc->loadModel();
 
@@ -330,8 +328,8 @@ bool Module::enter() {
 	CameraMan.reset();
 
 	// Roughly head position
-	CameraMan.setPosition(entryX, entryZ + 2.0, entryY);
-	CameraMan.setOrientation(entryDirX, entryDirY);
+	CameraMan.setPosition(glm::vec3(entry.x, entry.z + 2.0, entry.y));
+	CameraMan.setOrientation(direction);
 
 	return true;
 }
@@ -468,33 +466,34 @@ bool Module::handleCamera(const Events::Event &e) {
 	else if (e.key.keysym.sym == SDLK_DOWN)
 		CameraMan.move(-0.5);
 	else if (e.key.keysym.sym == SDLK_RIGHT)
-		CameraMan.turn( 0.0,  5.0, 0.0);
+		CameraMan.turn(glm::vec3( 0.0,  5.0, 0.0));
 	else if (e.key.keysym.sym == SDLK_LEFT)
-		CameraMan.turn( 0.0, -5.0, 0.0);
+		CameraMan.turn(glm::vec3( 0.0, -5.0, 0.0));
 	else if (e.key.keysym.sym == SDLK_w)
 		CameraMan.move( 0.5);
 	else if (e.key.keysym.sym == SDLK_s)
 		CameraMan.move(-0.5);
 	else if (e.key.keysym.sym == SDLK_d)
-		CameraMan.turn( 0.0,  5.0, 0.0);
+		CameraMan.turn(glm::vec3( 0.0,  5.0, 0.0));
 	else if (e.key.keysym.sym == SDLK_a)
-		CameraMan.turn( 0.0, -5.0, 0.0);
+		CameraMan.turn(glm::vec3( 0.0, -5.0, 0.0));
 	else if (e.key.keysym.sym == SDLK_e)
 		CameraMan.strafe( 0.5);
 	else if (e.key.keysym.sym == SDLK_q)
 		CameraMan.strafe(-0.5);
 	else if (e.key.keysym.sym == SDLK_INSERT)
-		CameraMan.move(0.0,  0.5, 0.0);
+		CameraMan.move(glm::vec3( 0.0,  0.5, 0.0));
 	else if (e.key.keysym.sym == SDLK_DELETE)
-		CameraMan.move(0.0, -0.5, 0.0);
+		CameraMan.move(glm::vec3( 0.0, -0.5, 0.0));
 	else if (e.key.keysym.sym == SDLK_PAGEUP)
-		CameraMan.turn( 5.0,  0.0, 0.0);
+		CameraMan.turn(glm::vec3( 5.0,  0.0, 0.0));
 	else if (e.key.keysym.sym == SDLK_PAGEDOWN)
-		CameraMan.turn(-5.0,  0.0, 0.0);
+		CameraMan.turn(glm::vec3(-5.0,  0.0, 0.0));
 	else if (e.key.keysym.sym == SDLK_END) {
-		const float *orient = CameraMan.getOrientation();
+		glm::vec3 orient = CameraMan.getOrientation();
+		orient.x = 0.0;
 
-		CameraMan.setOrientation(0.0, orient[1], orient[2]);
+		CameraMan.setOrientation(orient);
 	} else
 		return false;
 
@@ -667,7 +666,7 @@ bool Module::startConversation(const Common::UString &conv, Creature &pc,
 	return _ingameGUI->startConversation(conv, pc, obj, playHello);
 }
 
-void Module::movePC(const Common::UString &area, float x, float y, float z) {
+void Module::movePC(const Common::UString &area, const glm::vec3 &position) {
 	if (!_pc)
 		return;
 
@@ -677,15 +676,15 @@ void Module::movePC(const Common::UString &area, float x, float y, float z) {
 	if (a != _areas.end())
 		pcArea = a->second;
 
-	movePC(pcArea, x, y, z);
+	movePC(pcArea, position);
 }
 
-void Module::movePC(Area *area, float x, float y, float z) {
+void Module::movePC(Area *area, const glm::vec3 &position) {
 	if (!_pc)
 		return;
 
 	_pc->setArea(area);
-	_pc->setPosition(x, y, z);
+	_pc->setPosition(position);
 
 	movedPC();
 }
@@ -694,11 +693,10 @@ void Module::movedPC() {
 	if (!_pc)
 		return;
 
-	float x, y, z;
-	_pc->getPosition(x, y, z);
+	const glm::vec3 position = _pc->getPosition();
 
 	// Roughly head position
-	CameraMan.setPosition(x, z + 2.0, y);
+	CameraMan.setPosition(glm::vec3(position.x, position.z + 2.0, position.y));
 
 	_newArea.clear();
 	if (_pc->getArea())

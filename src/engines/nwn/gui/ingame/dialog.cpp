@@ -84,8 +84,8 @@ DialogBox::ReplyLine::ReplyLine(std::list<Reply>::const_iterator &i) :
 }
 
 
-DialogBox::DialogBox(float width, float height) : _width(width), _height(height),
-	_x(0.0), _y(0.0), _z(0.0), _replyCount(0), _replyCountWidth(0.0) {
+DialogBox::DialogBox(const glm::vec2 &size) : _size(size),
+	_position(0.0, 0.0, 0.0), _replyCount(0), _replyCountWidth(0.0) {
 
 	const Common::UString fontName =
 		ConfigMan.getBool("largefonts") ? "fnt_dialog_big16" : "fnt_dialog16x16";
@@ -136,83 +136,65 @@ void DialogBox::hide() {
 	GfxMan.unlockFrame();
 }
 
-bool DialogBox::isIn(float x, float y) const {
-	if ((x < _x) || (x > (_x + _width)))
-		return false;
-	if ((y < _y) || (y > (_y + _height)))
-		return false;
-
-	return true;
+bool DialogBox::isIn(const glm::vec2 &point) const {
+	return Common::insideOf(point, _position.xy(), _position.xy() + _size);
 }
 
-float DialogBox::getWidth() const {
-	return _width;
+glm::vec2 DialogBox::getSize() const {
+	return _size;
 }
 
-float DialogBox::getHeight() const {
-	return _height;
+glm::vec3 DialogBox::getPosition() const {
+	return _position;
 }
 
-void DialogBox::getPosition(float &x, float &y, float &z) const {
-	x = _x;
-	y = _y;
-	z = _z;
-}
-
-void DialogBox::setPosition(float x, float y, float z) {
+void DialogBox::setPosition(const glm::vec3 &position) {
 	GfxMan.lockFrame();
 
-	_x = x;
-	_y = y;
-	_z = z;
+	_position = position;
 
 	// Portrait
 
-	const float portraitX = _x + 3.0;
-	const float portraitY = _y + _height - _portrait->getHeight() - 3.0;
-	const float portraitZ = _z - 10.0;
+	const glm::vec3 ppos = _position + glm::vec3(3.0, _size.y - _portrait->getSize().y - 3.0, -10.0);
 
-	_portrait->setPosition(portraitX, portraitY, portraitZ);
+	_portrait->setPosition(ppos);
 
 	// Name
 
-	const float nameX = portraitX + _portrait->getWidth() + 5.0;
-	const float nameY = portraitY + _portrait->getHeight() - _name->getHeight();
+	const glm::vec3 npos = ppos + glm::vec3(_portrait->getSize() + glm::vec2(5.0, -_name->getSize().y),
+	                                        0.0);
 
-	_name->setPosition(nameX, nameY, portraitZ);
+	_name->setPosition(npos);
 
 	// NPC Entry
 
-	const float entryX = nameX;
-	      float entryY = nameY - 4.0;
+	glm::vec3 epos = npos + glm::vec3(0.0, -4.0, 0.0);
 
 	for (std::list<Graphics::Aurora::Text *>::iterator e = _entryLines.begin();
 	     e != _entryLines.end(); ++e) {
-		entryY -= _font.getFont().getHeight() + _font.getFont().getLineSpacing();
+		epos.y -= _font.getFont().getHeight() + _font.getFont().getLineSpacing();
 
-		(*e)->setPosition(entryX, entryY, portraitZ);
+		(*e)->setPosition(epos);
 	}
 
 	// PC Replies
 
-	const float replyX = _x + 5.0;
-	      float replyY = MIN<float>(entryY, portraitY) - 4.0;
-
-	const float replyCountRight = replyX + _replyCountWidth;
+	glm::vec3 rpos = glm::vec3(_position.x + 5.0, glm::min(epos.y, ppos.y) - 4.0, ppos.z);
+	const float replyCountRight = rpos.x + _replyCountWidth;
 
 	for (std::list<ReplyLine>::iterator r = _replyLines.begin(); r != _replyLines.end(); ++r) {
-		replyY -= _font.getFont().getHeight() + _font.getFont().getLineSpacing();
+		rpos.y -= _font.getFont().getHeight() + _font.getFont().getLineSpacing();
 
 		if (r->count) {
-			const float replyCountX = replyCountRight - r->count->getWidth();
+			rpos.x = replyCountRight - r->count->getSize().x;
 
-			r->count->setPosition(replyCountX, replyY, portraitZ);
+			r->count->setPosition(rpos);
 		}
 
-		const float replyLineX = replyCountRight;
+		rpos.x = replyCountRight;
 
 		if (r->line)
-			r->line->setPosition(replyLineX, replyY, portraitZ);
+			r->line->setPosition(rpos);
 	}
 
 	resort();
@@ -282,7 +264,7 @@ void DialogBox::setEntry(const Common::UString &entry) {
 
 	// TODO: Check entry length, scrollbars
 
-	const float maxWidth = _width - 2.0 - 2.0 - _portrait->getWidth() - 5.0;
+	const float maxWidth = _size.x - 2.0 - 2.0 - _portrait->getSize().x - 5.0;
 
 	std::vector<Common::UString> lines;
 	_font.getFont().split(_entry, lines, maxWidth);
@@ -290,7 +272,7 @@ void DialogBox::setEntry(const Common::UString &entry) {
 	for (std::vector<Common::UString>::iterator l = lines.begin(); l != lines.end(); ++l)
 		_entryLines.push_back(new Graphics::Aurora::Text(_font, *l));
 
-	setPosition(_x, _y, _z);
+	setPosition(_position);
 
 	if (isVisible())
 		showEntry();
@@ -363,12 +345,12 @@ void DialogBox::finishReplies() {
 			new Graphics::Aurora::Text(_font, Common::UString::sprintf("%d. ", ++_replyCount),
 			                           kLightBlueR, kLightBlueG, kLightBlueB);
 
-		_replyCountWidth = MAX(_replyCountWidth, _replyLines.back().count->getWidth());
+		_replyCountWidth = MAX(_replyCountWidth, _replyLines.back().count->getSize().x);
 	}
 
 	// Create the reply line texts
 
-	const float maxWidth = _width - 6.0 - _replyCountWidth;
+	const float maxWidth = _size.x - 6.0 - _replyCountWidth;
 
 	for (std::list<ReplyLine>::iterator r = _replyLines.begin(); r != _replyLines.end(); ++r) {
 		std::vector<Common::UString> lines;
@@ -393,32 +375,31 @@ void DialogBox::finishReplies() {
 
 	}
 
-	setPosition(_x, _y, _z);
+	setPosition(_position);
 
 	if (isVisible())
 		showReplies();
 }
 
-void DialogBox::mouseMove(int x, int y) {
-	float screenX, screenY;
-	CursorMan.toScreenCoordinates(x, y, screenX, screenY);
+void DialogBox::mouseMove(const glm::ivec2 &point) {
+	const glm::vec2 spos = CursorMan.toScreenCoordinates(point);
 
-	if (!isIn(screenX, screenY)) {
+	if (!isIn(spos)) {
 		setHighlight(_replyLines.end());
 		return;
 	}
 
 	std::list<ReplyLine>::iterator highlight;
 	for (highlight = _replyLines.begin(); highlight != _replyLines.end(); ++highlight)
-		if ((highlight->count && highlight->count->isIn(screenX, screenY)) ||
-		    (highlight->line  && highlight->line->isIn (screenX, screenY)))
+		if ((highlight->count && highlight->count->isIn(spos)) ||
+		    (highlight->line  && highlight->line->isIn (spos)))
 			break;
 
 	setHighlight(highlight);
 }
 
-void DialogBox::mouseClick(int x, int y) {
-	mouseMove(x, y);
+void DialogBox::mouseClick(const glm::ivec2 &point) {
+	mouseMove(point);
 
 	if (_highlightedReply == _replyLines.end())
 		_pickedReply = _replies.end();
@@ -490,7 +471,7 @@ void DialogBox::setHighlight(const std::list<ReplyLine>::iterator &h) {
 }
 
 void DialogBox::calculateDistance() {
-	_distance = _z;
+	_distance = _position.z;
 }
 
 void DialogBox::render(Graphics::RenderPass pass) {
@@ -498,51 +479,29 @@ void DialogBox::render(Graphics::RenderPass pass) {
 		return;
 
 	TextureMan.reset();
-	glColor4f(0.0, 0.0, 0.0, 0.5);
 
+	const glm::vec2 botLeft  = glm::vec2(_position);
+	const glm::vec2 topLeft  = botLeft  + glm::vec2(0.0, _size.y);
+	const glm::vec2 botRight = botLeft  + glm::vec2(_size.x, 0.0);
+	const glm::vec2 topRight = botLeft  + _size;
 
 	// Backdrop
+	glColor4f(0.0, 0.0, 0.0, 0.5);
 	glBegin(GL_QUADS);
-		glVertex2f(_x         , _y          );
-		glVertex2f(_x + _width, _y          );
-		glVertex2f(_x + _width, _y + _height);
-		glVertex2f(_x         , _y + _height);
+		glVertex2fv(glm::value_ptr(botLeft));
+		glVertex2fv(glm::value_ptr(botRight));
+		glVertex2fv(glm::value_ptr(topRight));
+		glVertex2fv(glm::value_ptr(topLeft));
 	glEnd();
 
-	// Top edge
+	// Edges
 	glColor4f(1.0, 1.0, 1.0, 1.0);
-	glBegin(GL_QUADS);
-		glVertex2f(_x         , _y + _height - 1.0);
-		glVertex2f(_x + _width, _y + _height - 1.0);
-		glVertex2f(_x + _width, _y + _height      );
-		glVertex2f(_x         , _y + _height      );
-	glEnd();
-
-	// Bottom edge
-	glColor4f(1.0, 1.0, 1.0, 1.0);
-	glBegin(GL_QUADS);
-		glVertex2f(_x         , _y      );
-		glVertex2f(_x + _width, _y      );
-		glVertex2f(_x + _width, _y + 1.0);
-		glVertex2f(_x         , _y + 1.0);
-	glEnd();
-
-	// Left edge
-	glColor4f(1.0, 1.0, 1.0, 1.0);
-	glBegin(GL_QUADS);
-		glVertex2f(_x + 1.0, _y + _height);
-		glVertex2f(_x      , _y + _height);
-		glVertex2f(_x      , _y          );
-		glVertex2f(_x + 1.0, _y          );
-	glEnd();
-
-	// Right edge
-	glColor4f(1.0, 1.0, 1.0, 1.0);
-	glBegin(GL_QUADS);
-		glVertex2f(_x + _width      , _y + _height);
-		glVertex2f(_x + _width - 1.0, _y + _height);
-		glVertex2f(_x + _width - 1.0, _y          );
-		glVertex2f(_x + _width      , _y          );
+	glBegin(GL_LINE_STRIP);
+		glVertex2fv(glm::value_ptr(botLeft));
+		glVertex2fv(glm::value_ptr(botRight));
+		glVertex2fv(glm::value_ptr(topRight));
+		glVertex2fv(glm::value_ptr(topLeft));
+		glVertex2fv(glm::value_ptr(botLeft));
 	glEnd();
 
 	glColor4f(1.0, 1.0, 1.0, 1.0);
@@ -558,13 +517,13 @@ Dialog::Dialog(const Common::UString &conv, Creature &pc, Object &obj,
 	_dlg = new Aurora::DLGFile(conv, _object);
 	_dlg->startConversation();
 
-	_dlgBox = new DialogBox(kDialogWidth, kDialogHeight);
+	_dlgBox = new DialogBox(glm::vec2(kDialogWidth, kDialogHeight));
 
 	updateBox();
 	playSound(playHello);
 	playAnimation();
 
-	notifyResized(0, 0, GfxMan.getScreenWidth(), GfxMan.getScreenHeight());
+	notifyResized(glm::ivec2(0, 0), GfxMan.getScreenSize());
 }
 
 Dialog::~Dialog() {
@@ -624,17 +583,16 @@ int Dialog::processEventQueue() {
 }
 
 void Dialog::mouseMove() {
-	int x, y;
-	CursorMan.getPosition(x, y);
+	const glm::ivec2 cursor = CursorMan.getPosition();
 
-	_dlgBox->mouseMove(x, y);
+	_dlgBox->mouseMove(cursor);
 }
 
 void Dialog::mouseClick(const Events::Event &event) {
 	if (event.button.button != SDL_BUTTON_LMASK)
 		return;
 
-	_dlgBox->mouseClick(event.button.x, event.button.y);
+	_dlgBox->mouseClick(glm::ivec2(event.button.x, event.button.y));
 	checkPicked();
 }
 
@@ -687,11 +645,11 @@ void Dialog::checkPicked() {
 	mouseMove();
 }
 
-void Dialog::notifyResized(int oldWidth, int oldHeight, int newWidth, int newHeight) {
-	const float x = -(newWidth  / 2.0)                        + 10.0;
-	const float y =  (newHeight / 2.0) - _dlgBox->getHeight() - 20.0;
+void Dialog::notifyResized(const glm::ivec2 &oldSize, const glm::ivec2 &newSize) {
+	const float x = -(newSize.x / 2.0)                        + 10.0;
+	const float y =  (newSize.y / 2.0) - _dlgBox->getSize().y - 20.0;
 
-	_dlgBox->setPosition(x, y, 0.0);
+	_dlgBox->setPosition(glm::vec3(x, y, 0.0));
 }
 
 void Dialog::updateBox() {

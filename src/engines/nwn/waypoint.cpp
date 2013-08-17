@@ -90,19 +90,18 @@ void Waypoint::load(const Aurora::GFFStruct &instance, const Aurora::GFFStruct *
 
 	// Position
 
-	setPosition(instance.getDouble("XPosition"),
-	            instance.getDouble("YPosition"),
-	            instance.getDouble("ZPosition"));
+	setPosition(glm::vec3(instance.getDouble("XPosition"),
+	                      instance.getDouble("YPosition"),
+	                      instance.getDouble("ZPosition")));
 
 	// Orientation
 
-	float bearingX = instance.getDouble("XOrientation");
-	float bearingY = instance.getDouble("YOrientation");
+	const glm::vec2 bearing = glm::vec2(instance.getDouble("XOrientation"),
+	                                    instance.getDouble("YOrientation"));
 
-	float o[3];
-	Common::vector2orientation(bearingX, bearingY, o[0], o[1], o[2]);
+	const glm::vec3 o = Common::vector2orientation(bearing);
 
-	setOrientation(o[0], o[1], o[2]);
+	setOrientation(o);
 }
 
 void Waypoint::loadProperties(const Aurora::GFFStruct &gff) {

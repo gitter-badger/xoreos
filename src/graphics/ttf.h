@@ -59,7 +59,7 @@ public:
 	int getCharWidth(uint32 ch) const;
 
 	/** Draw a specific character onto a BGRA surface. */
-	void drawCharacter(uint32 ch, Surface &surface, int x, int y);
+	void drawCharacter(uint32 ch, Surface &surface, const glm::ivec2 &position);
 
 private:
 	FT_Library _library;

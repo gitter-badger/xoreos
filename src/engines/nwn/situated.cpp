@@ -72,13 +72,11 @@ void Situated::loadModel() {
 
 	// Positioning
 
-	float x, y, z;
+	const glm::vec3 position = getPosition();
+	setPosition(position);
 
-	getPosition(x, y, z);
-	setPosition(x, y, z);
-
-	getOrientation(x, y, z);
-	setOrientation(x, y, z);
+	const glm::vec3 orientation = getOrientation();
+	setOrientation(orientation);
 
 	// Clickable
 
@@ -105,20 +103,20 @@ void Situated::hide() {
 		_model->hide();
 }
 
-void Situated::setPosition(float x, float y, float z) {
-	Object::setPosition(x, y, z);
-	Object::getPosition(x, y, z);
+void Situated::setPosition(const glm::vec3 &position) {
+	Object::setPosition(position);
+	const glm::vec3 p = Object::getPosition();
 
 	if (_model)
-		_model->setPosition(x, y, z);
+		_model->setPosition(p);
 }
 
-void Situated::setOrientation(float x, float y, float z) {
-	Object::setOrientation(x, y, z);
-	Object::getOrientation(x, y, z);
+void Situated::setOrientation(const glm::vec3 &orientation) {
+	Object::setOrientation(orientation);
+	const glm::vec3 o = Object::getOrientation();
 
 	if (_model)
-		_model->setRotation(x, z, -y);
+		_model->setRotation(glm::vec3(o.x, o.z, -o.y));
 }
 
 bool Situated::isLocked() const {
@@ -155,15 +153,15 @@ void Situated::load(const Aurora::GFFStruct &instance, const Aurora::GFFStruct *
 
 	// Position
 
-	setPosition(instance.getDouble("X"),
-	            instance.getDouble("Y"),
-	            instance.getDouble("Z"));
+	setPosition(glm::vec3(instance.getDouble("X"),
+	                      instance.getDouble("Y"),
+	                      instance.getDouble("Z")));
 
 	// Orientation
 
 	float bearing = instance.getDouble("Bearing");
 
-	setOrientation(0.0, Common::rad2deg(bearing), 0.0);
+	setOrientation(glm::vec3(0.0, Common::rad2deg(bearing), 0.0));
 }
 
 void Situated::loadProperties(const Aurora::GFFStruct &gff) {

@@ -77,16 +77,16 @@ ConsoleWindow::ConsoleWindow(const Common::UString &font, uint32 lines, uint32 h
 	setClickable(true);
 
 	_lineHeight = _font.getFont().getHeight() + _font.getFont().getLineSpacing();
-	_height     = floorf(lines * _lineHeight);
+	_size.y     = floorf(lines * _lineHeight);
 
 	_prompt = new Graphics::Aurora::Text(_font, "");
 	_input  = new Graphics::Aurora::Text(_font, "");
 
 	const float cursorHeight = _font.getFont().getHeight();
-	_cursor = new Graphics::Aurora::GUIQuad("", 0.0, 1.0, 0.0, cursorHeight);
+	_cursor = new Graphics::Aurora::GUIQuad("", glm::vec2(0.0, 1.0), glm::vec2(0.0, cursorHeight));
 	_cursor->setXOR(true);
 
-	_highlight = new Graphics::Aurora::GUIQuad("", 0.0, 0.0, 0.0, cursorHeight);
+	_highlight = new Graphics::Aurora::GUIQuad("", glm::vec2(0.0, 0.0), glm::vec2(0.0, cursorHeight));
 	_highlight->setColor(1.0, 1.0, 1.0, 0.0);
 	_highlight->setXOR(true);
 
@@ -94,7 +94,7 @@ ConsoleWindow::ConsoleWindow(const Common::UString &font, uint32 lines, uint32 h
 	for (uint32 i = 0; i < (lines - 1); i++)
 		_lines.push_back(new Graphics::Aurora::Text(_font, ""));
 
-	notifyResized(0, 0, GfxMan.getScreenWidth(), GfxMan.getScreenHeight());
+	notifyResized(glm::ivec2(0, 0), GfxMan.getScreenSize());
 
 	updateScrollbarLength();
 	updateScrollbarPosition();
@@ -178,33 +178,20 @@ void ConsoleWindow::hidePrompt() {
 	GfxMan.unlockFrame();
 }
 
-bool ConsoleWindow::isIn(float x, float y) const {
-	if ((x < _x) || (x > (_x + _width)))
-		return false;
-	if ((y < _y) || (y > (_y + _height)))
-		return false;
-
-	return true;
+bool ConsoleWindow::isIn(const glm::vec2 &point) const {
+	return Common::insideOf(point, _position.xy(), _position.xy() + _size);
 }
 
-bool ConsoleWindow::isIn(float x, float y, float z) const {
-	return isIn(x, y);
+bool ConsoleWindow::isIn(const glm::vec3 &position) const {
+	return isIn(position.xy());
 }
 
-float ConsoleWindow::getWidth() const {
-	return _width;
+glm::vec2 ConsoleWindow::getSize() const {
+	return _size;
 }
 
-float ConsoleWindow::getHeight() const {
-	return _height;
-}
-
-float ConsoleWindow::getContentWidth() const {
-	return _width - 15.0;
-}
-
-float ConsoleWindow::getContentHeight() const {
-	return _height - _lineHeight;
+glm::vec2 ConsoleWindow::getContentSize() const {
+	return _size - glm::vec2(15.0, _lineHeight);
 }
 
 uint32 ConsoleWindow::getLines() const {
@@ -212,7 +199,7 @@ uint32 ConsoleWindow::getLines() const {
 }
 
 uint32 ConsoleWindow::getColumns() const {
-	return floorf(getContentWidth() / _font.getFont().getWidth('m'));
+	return floorf(getContentSize().y / _font.getFont().getWidth('m'));
 }
 
 void ConsoleWindow::setPrompt(const Common::UString &prompt) {
@@ -220,7 +207,7 @@ void ConsoleWindow::setPrompt(const Common::UString &prompt) {
 
 	_prompt->set(prompt);
 
-	_input->setPosition(_x + _prompt->getWidth(), _y, -1001.0);
+	_input->setPosition(glm::vec3(_position + glm::vec2(_prompt->getSize().x, 0.0), -1001.0));
 	recalcCursor();
 
 	GfxMan.unlockFrame();
@@ -264,7 +251,7 @@ void ConsoleWindow::clear() {
 void ConsoleWindow::print(const Common::UString &line) {
 	std::vector<Common::UString> lines;
 
-	_font.getFont().split(line, lines, _width - 15.0);
+	_font.getFont().split(line, lines, _size.x - 15.0);
 	for (std::vector<Common::UString>::iterator l = lines.begin(); l != lines.end(); ++l)
 		printLine(*l);
 }
@@ -306,153 +293,134 @@ bool ConsoleWindow::setRedirect(Common::UString redirect) {
 }
 
 void ConsoleWindow::updateHighlight() {
-	if ((_highlightLength == 0) || (_highlightY >= kConsoleLines)) {
+	if ((_highlightLength == 0) || (_highlightPosition.y >= kConsoleLines)) {
 		_highlight->setColor(1.0, 1.0, 1.0, 0.0);
 		return;
 	}
 
 	const float charWidth = _font.getFont().getWidth(' ');
 
-	const int32 start = _highlightX;
-	const int32 end   = _highlightX + _highlightLength;
+	const int32 start = _highlightPosition.x;
+	const int32 end   = _highlightPosition.x + _highlightLength;
 
 	const  int32 x      = MIN(start, end);
 	const uint32 length = ABS(start - end);
 
-	_highlight->setWidth(length * charWidth);
-	_highlight->setPosition(_x + x * charWidth, _y + _highlightY * _lineHeight, -1002.0);
+	const glm::vec2 hsize = _highlight->getSize();
+	_highlight->setSize(glm::vec2(length * charWidth, hsize.y));
+	_highlight->setPosition(glm::vec3(_position + glm::vec2(x * charWidth, _highlightPosition.y * _lineHeight), -1002.0));
 	_highlight->setColor(1.0, 1.0, 1.0, 1.0);
 }
 
-bool ConsoleWindow::getPosition(int cursorX, int cursorY, float &x, float &y) {
-	float realX, realY;
-	CursorMan.toScreenCoordinates(cursorX, cursorY, realX, realY);
+glm::vec2 ConsoleWindow::getPosition(const glm::ivec2 &cursor) {
+	const glm::vec2 rpos = CursorMan.toScreenCoordinates(cursor);
 
-	x = (realX - _x) / _font.getFont().getWidth(' ');
-	y = (realY - _y) / _lineHeight;
-
-	if ((x < _x) || (x > (_x + _width)))
-		return false;
-	if ((y < _y) || (y > (_y + _height)))
-		return false;
-
-	return true;
+	return (rpos - _position) / glm::vec2(_font.getFont().getWidth(' '), _lineHeight);
 }
 
-void ConsoleWindow::highlightClip(uint32 &x, uint32 &y) const {
-	y = CLIP<uint32>(y, 0, _lines.size());
+glm::uvec2 ConsoleWindow::highlightClip(const glm::uvec2 &position) const {
+	glm::uvec2 min = glm::uvec2(0, 0);
+	glm::uvec2 max = glm::uvec2(0, _lines.size());
 
-	uint32 minX, maxX;
-	if        (y == 0) {
-		minX = _prompt->get().size();
-		maxX = _prompt->get().size() + _input->get().size();
+	if (position.y == 0) {
+		min.x = _prompt->get().size();
+		max.x = _prompt->get().size() + _input->get().size();
 	} else {
-		minX = 0;
-		maxX = _lines[_lines.size() - y]->get().size();
+		min.x = 0;
+		max.x = _lines[_lines.size() - position.y]->get().size();
 	}
 
-	x = CLIP(x, minX, maxX);
+	return glm::clamp(position, min, max);
 }
 
-void ConsoleWindow::startHighlight(int x, int y) {
+void ConsoleWindow::startHighlight(const glm::ivec2 &cursor) {
 	clearHighlight();
 
-	float lineX, lineY;
-	if (!getPosition(x, y, lineX, lineY))
+	const glm::vec2 lpos = getPosition(cursor);
+	if (!isIn(lpos))
 		return;
 
-	_highlightX = floor(lineX);
-	_highlightY = floor(lineY);
-
-	highlightClip(_highlightX, _highlightY);
+	_highlightPosition = highlightClip(glm::uvec2(lpos));
 
 	updateHighlight();
 }
 
-void ConsoleWindow::stopHighlight(int x, int y) {
-	float lineX, lineY;
-	if (!getPosition(x, y, lineX, lineY))
+void ConsoleWindow::stopHighlight(const glm::ivec2 &cursor) {
+	const glm::vec2 lpos = getPosition(cursor);
+	if (!isIn(lpos))
 		return;
 
-	uint32 endX = floor(lineX);
+	const glm::uvec2 epos = highlightClip(glm::uvec2(lpos.x, _highlightPosition.y));
 
-	highlightClip(endX, _highlightY);
-
-	_highlightLength = ((int32) endX) - ((int32) _highlightX);
+	_highlightLength = epos.x - _highlightPosition.x;
 
 	updateHighlight();
 }
 
-void ConsoleWindow::highlightWord(int x, int y) {
+void ConsoleWindow::highlightWord(const glm::ivec2 &cursor) {
 	clearHighlight();
 
-	float lineX, lineY;
-	if (!getPosition(x, y, lineX, lineY))
+	const glm::vec2 lpos = getPosition(cursor);
+	if (!isIn(lpos))
 		return;
 
-	uint32 wX = floor(lineX);
-	uint32 wY = floor(lineY);
+	const glm::uvec2 wpos = highlightClip(glm::uvec2(lpos));
 
-	highlightClip(wX, wY);
-
-	const Common::UString &line = (wY == 0) ? _input->get() :
-	                                          _lines[_lines.size() - wY]->get();
-	const uint32 pos = (wY == 0) ? (wX - _prompt->get().size()) : wX;
+	const Common::UString &line = (wpos.y == 0) ? _input->get() :
+	                                              _lines[_lines.size() - wpos.y]->get();
+	const uint32 pos = (wpos.y == 0) ? (wpos.x - _prompt->get().size()) : wpos.x;
 
 	uint32 wordStart = findWordStart(line, pos);
 	uint32 wordEnd   = findWordEnd  (line, pos);
 
-	_highlightX      = (wY == 0) ? (wordStart + _prompt->get().size()) : wordStart;
-	_highlightY      =  wY;
-	_highlightLength = wordEnd - wordStart;
+	_highlightPosition.x = (wpos.y == 0) ? (wordStart + _prompt->get().size()) : wordStart;
+	_highlightPosition.y =  wpos.y;
+	_highlightLength     = wordEnd - wordStart;
 
 	updateHighlight();
 }
 
-void ConsoleWindow::highlightLine(int x, int y) {
+void ConsoleWindow::highlightLine(const glm::ivec2 &cursor) {
 	clearHighlight();
 
-	float lineX, lineY;
-	if (!getPosition(x, y, lineX, lineY))
+	const glm::vec2 lpos = getPosition(cursor);
+	if (!isIn(lpos))
 		return;
 
-	_highlightX = 0;
-	_highlightY = floor(lineY);
+	_highlightPosition = highlightClip(glm::uvec2(0, lpos.y));
 
-	highlightClip(_highlightX, _highlightY);
-
-	const Common::UString &line = (_highlightY == 0) ?
-		_input->get() : _lines[_lines.size() - _highlightY]->get();
+	const Common::UString &line = (_highlightPosition.y == 0) ?
+		_input->get() : _lines[_lines.size() - _highlightPosition.y]->get();
 	_highlightLength = line.size();
 
 	updateHighlight();
 }
 
 void ConsoleWindow::clearHighlight() {
-	_highlightX      = 0;
-	_highlightY      = 0;
+	_highlightPosition.x      = 0;
+	_highlightPosition.y      = 0;
 	_highlightLength = 0;
 
 	updateHighlight();
 }
 
 Common::UString ConsoleWindow::getHighlight() const {
-	if ((_highlightLength == 0) || (_highlightY >= kConsoleLines))
+	if ((_highlightLength == 0) || (_highlightPosition.y >= kConsoleLines))
 		return "";
 
-	int32 start = _highlightX;
-	int32 end   = _highlightX + _highlightLength;
+	int32 start = _highlightPosition.x;
+	int32 end   = _highlightPosition.x + _highlightLength;
 
 	if (start > end)
 		SWAP(start, end);
 
 	Common::UString line;
-	if (_highlightY == 0) {
+	if (_highlightPosition.y == 0) {
 		start = start - _prompt->get().size();
 		end   = end   - _prompt->get().size();
 		line  = _input->get();
 	} else
-		line = _lines[_lines.size() - _highlightY]->get();
+		line = _lines[_lines.size() - _highlightPosition.y]->get();
 
 	start = MAX(0, start);
 	end   = MAX(0, end  );
@@ -521,59 +489,72 @@ void ConsoleWindow::render(Graphics::RenderPass pass) {
 	}
 
 	TextureMan.reset();
-	glColor4f(0.0, 0.0, 0.0, 0.75);
 
+	const glm::vec2 botLeft  = glm::vec2(_position);
+	const glm::vec2 topLeft  = botLeft  + glm::vec2(0.0, _size.y);
+	const glm::vec2 botRight = botLeft  + glm::vec2(_size.x, 0.0);
+	const glm::vec2 topRight = botLeft  + _size;
+
+	const glm::vec2 edgeMargin   = glm::vec2( 0.0, 3.0);
+	const glm::vec2 scrollMargin = glm::vec2(12.0, 0.0);
+
+  const glm::vec2 scrollSize     = glm::vec2(8.0, _scrollbarLength);
+	const glm::vec2 scrollBotLeft  = botRight      + glm::vec2(-10.0, 2.0 + _scrollbarPosition);
+	const glm::vec2 scrollTopLeft  = scrollBotLeft + glm::vec2(0.0, scrollSize.y);
+	const glm::vec2 scrollBotRight = scrollBotLeft + glm::vec2(scrollSize.x, 0.0);
+	const glm::vec2 scrollTopRight = scrollBotLeft + scrollSize;
 
 	// Backdrop
+	glColor4f(0.0, 0.0, 0.0, 0.75);
 	glBegin(GL_QUADS);
-		glVertex2f(_x         , _y          );
-		glVertex2f(_x + _width, _y          );
-		glVertex2f(_x + _width, _y + _height);
-		glVertex2f(_x         , _y + _height);
+		glVertex2fv(glm::value_ptr(botLeft));
+		glVertex2fv(glm::value_ptr(botRight));
+		glVertex2fv(glm::value_ptr(topRight));
+		glVertex2fv(glm::value_ptr(topLeft));
 	glEnd();
 
 	// Bottom edge
 	glColor4f(0.0, 0.0, 0.0, 1.0);
 	glBegin(GL_QUADS);
-		glVertex2f(_x         , _y - 3.0);
-		glVertex2f(_x + _width, _y - 3.0);
-		glVertex2f(_x + _width, _y      );
-		glVertex2f(_x         , _y      );
+		glVertex2fv(glm::value_ptr(botLeft  - edgeMargin));
+		glVertex2fv(glm::value_ptr(botRight - edgeMargin));
+		glVertex2fv(glm::value_ptr(botRight));
+		glVertex2fv(glm::value_ptr(botLeft));
 	glEnd();
 
 	// Scrollbar background
 	glColor4f(0.0, 0.0, 0.0, 1.0);
 	glBegin(GL_QUADS);
-		glVertex2f(_x + _width - 12.0, _y          );
-		glVertex2f(_x + _width       , _y          );
-		glVertex2f(_x + _width       , _y + _height);
-		glVertex2f(_x + _width - 12.0, _y + _height);
+		glVertex2fv(glm::value_ptr(botRight - scrollMargin));
+		glVertex2fv(glm::value_ptr(botRight));
+		glVertex2fv(glm::value_ptr(topRight));
+		glVertex2fv(glm::value_ptr(topRight - scrollMargin));
 	glEnd();
 
 	// Scrollbar
 	glColor4f(0.5, 0.5, 0.5, 0.5);
 	glBegin(GL_QUADS);
-		glVertex2f(_x + _width - 10.0, _y + 2.0 + _scrollbarPosition);
-		glVertex2f(_x + _width -  2.0, _y + 2.0 + _scrollbarPosition);
-		glVertex2f(_x + _width -  2.0, _y + 2.0 + _scrollbarPosition + _scrollbarLength);
-		glVertex2f(_x + _width - 10.0, _y + 2.0 + _scrollbarPosition + _scrollbarLength);
+		glVertex2fv(glm::value_ptr(scrollBotLeft));
+		glVertex2fv(glm::value_ptr(scrollBotRight));
+		glVertex2fv(glm::value_ptr(scrollTopRight));
+		glVertex2fv(glm::value_ptr(scrollTopLeft));
 	glEnd();
 
 	glColor4f(1.0, 1.0, 1.0, 1.0);
 }
 
-void ConsoleWindow::notifyResized(int oldWidth, int oldHeight, int newWidth, int newHeight) {
-	_width = newWidth;
+void ConsoleWindow::notifyResized(const glm::ivec2 &oldSize, const glm::ivec2 &newSize) {
+	_size.x = newSize.x;
 
-	_x = -(newWidth  / 2.0);
-	_y =  (newHeight / 2.0) - _height;
+	_position.x = -(newSize.x / 2.0);
+	_position.y =  (newSize.y / 2.0) - _size.y;
 
-	float textY = (newHeight / 2.0) - _lineHeight;
+	float textY = (newSize.y / 2.0) - _lineHeight;
 	for (uint32 i = 0; i < _lines.size(); i++, textY -= _lineHeight)
-		_lines[i]->setPosition(_x, textY, -1001.0);
+		_lines[i]->setPosition(glm::vec3(_position.x, textY, -1001.0));
 
-	_prompt->setPosition(_x                      , _y, -1001.0);
-	_input ->setPosition(_x + _prompt->getWidth(), _y, -1001.0);
+	_prompt->setPosition(glm::vec3(_position, -1001.0));
+	_input ->setPosition(glm::vec3(_position.x + _prompt->getSize().x, _position.y, -1001.0));
 
 	recalcCursor();
 }
@@ -607,11 +588,13 @@ void ConsoleWindow::recalcCursor() {
 	Common::UString input = _inputText;
 	input.truncate(_cursorPosition);
 
-	const float cursorX = _x + _prompt->getWidth() + _font.getFont().getWidth(input) - 1.0;
-	_cursor->setPosition(cursorX, _y, -1002.0);
+	glm::vec2 cursor = _position;
+	cursor.x += _prompt->getSize().x + _font.getFont().getWidth(input) - 1.0;
+	_cursor->setPosition(glm::vec3(cursor, -1002.0));
 
-	const float cursorWidth = 1.0 + (_overwrite ? _font.getFont().getWidth(' ') : 0.0);
-	_cursor->setWidth(cursorWidth);
+	glm::vec2 cursorSize = _cursor->getSize();
+	cursorSize.x = 1.0 + (_overwrite ? _font.getFont().getWidth(' ') : 0.0);
+	_cursor->setSize(cursorSize);
 }
 
 void ConsoleWindow::redrawLines() {
@@ -632,7 +615,7 @@ void ConsoleWindow::updateScrollbarLength() {
 	if (_historySizeCurrent > 0)
 		length = ((float) _lines.size()) / _historySizeCurrent;
 
-	const float height = _height - 4.0;
+	const float height = _size.y - 4.0;
 	_scrollbarLength = floorf(CLIP(length * height, 8.0f, height));
 }
 
@@ -643,7 +626,7 @@ void ConsoleWindow::updateScrollbarPosition() {
 	if (max > 0)
 		position = ((float) _historyStart) / max;
 
-	const float span = (_height - 4.0) - _scrollbarLength;
+	const float span = (_size.y - 4.0) - _scrollbarLength;
 	_scrollbarPosition = floorf(CLIP(position * span, 0.0f, span));
 }
 
@@ -726,12 +709,8 @@ bool Console::isVisible() const {
 	return _visible;
 }
 
-float Console::getWidth() const {
-	return _console->getContentWidth();
-}
-
-float Console::getHeight() const {
-	return _console->getContentHeight();
+glm::vec2 Console::getSize() const {
+	return _console->getContentSize();
 }
 
 uint32 Console::getLines() const {
@@ -762,7 +741,7 @@ bool Console::processEvent(Events::Event &event) {
 		}
 
 		if (button & SDL_BUTTON_LMASK) {
-			_console->startHighlight(event.button.x, event.button.y);
+			_console->startHighlight(glm::ivec2(event.button.x, event.button.y));
 			return true;
 		}
 	}
@@ -772,7 +751,7 @@ bool Console::processEvent(Events::Event &event) {
 		    (event.button.button != SDL_BUTTON_WHEELDOWN))) {
 
 		if (event.motion.state & SDL_BUTTON_LMASK) {
-			_console->stopHighlight(event.button.x, event.button.y);
+			_console->stopHighlight(glm::ivec2(event.button.x, event.button.y));
 			return true;
 		}
 	}
@@ -797,11 +776,11 @@ bool Console::processEvent(Events::Event &event) {
 
 		if (event.button.button & SDL_BUTTON_LMASK) {
 			if      (_lastClickCount == 0)
-				_console->stopHighlight(event.button.x, event.button.y);
+				_console->stopHighlight(glm::ivec2(event.button.x, event.button.y));
 			else if (_lastClickCount == 1)
-				_console->highlightWord(event.button.x, event.button.y);
+				_console->highlightWord(glm::ivec2(event.button.x, event.button.y));
 			else if (_lastClickCount == 2)
-				_console->highlightLine(event.button.x, event.button.y);
+				_console->highlightLine(glm::ivec2(event.button.x, event.button.y));
 
 			return true;
 		}

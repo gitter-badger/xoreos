@@ -196,10 +196,9 @@ bool Door::click(Object *triggerer) {
 
 	evaluateLink();
 	if (_link) {
-		float x, y, z;
-		_link->getPosition(x, y, z);
+		const glm::vec3 p = _link->getPosition();
 
-		_module->movePC(_link->getArea(), x, y, z);
+		_module->movePC(_link->getArea(), p);
 		return true;
 	}
 

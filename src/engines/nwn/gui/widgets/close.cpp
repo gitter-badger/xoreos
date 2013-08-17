@@ -57,7 +57,7 @@ void WidgetClose::leave() {
 	_model->setState("");
 }
 
-void WidgetClose::mouseDown(uint8 state, float x, float y) {
+void WidgetClose::mouseDown(uint8 state, const glm::vec2 &point) {
 	if (isDisabled())
 		return;
 
@@ -68,7 +68,7 @@ void WidgetClose::mouseDown(uint8 state, float x, float y) {
 	playSound("gui_button", Sound::kSoundTypeSFX);
 }
 
-void WidgetClose::mouseUp(uint8 state, float x, float y) {
+void WidgetClose::mouseUp(uint8 state, const glm::vec2 &point) {
 	if (isDisabled())
 		return;
 

@@ -47,7 +47,7 @@ namespace Video {
 
 VideoDecoder::VideoDecoder() : Renderable(Graphics::kRenderableTypeVideo),
 	_started(false), _finished(false), _needCopy(false),
-	_width(0), _height(0), _surface(0), _texture(0),
+	_size(0, 0), _surface(0), _texture(0),
 	_textureWidth(0.0), _textureHeight(0.0), _scale(kScaleNone),
 	_sound(0), _soundRate(0), _soundFlags(0) {
 
@@ -70,20 +70,19 @@ void VideoDecoder::deinit() {
 	GLContainer::removeFromQueue(Graphics::kQueueGLContainer);
 }
 
-void VideoDecoder::initVideo(uint32 width, uint32 height) {
-	_width  = width;
-	_height = height;
+void VideoDecoder::initVideo(const glm::uvec2 &size) {
+	_size = size;
 
 	// The real texture dimensions. Have to be a power of 2
-	int realWidth  = NEXTPOWER2(width);
-	int realHeight = NEXTPOWER2(height);
+	int realWidth  = NEXTPOWER2(size.x);
+	int realHeight = NEXTPOWER2(size.y);
 
 	// Dimensions of the actual video part of texture
-	_textureWidth  = ((float) _width ) / ((float) realWidth );
-	_textureHeight = ((float) _height) / ((float) realHeight);
+	_textureWidth  = ((float) size.x) / ((float) realWidth );
+	_textureHeight = ((float) size.y) / ((float) realHeight);
 
 	delete _surface;
-	_surface = new Graphics::Surface(realWidth, realHeight);
+	_surface = new Graphics::Surface(glm::ivec2(realWidth, realHeight));
 
 	_surface->fill(0, 0, 0, 0);
 
@@ -172,7 +171,8 @@ void VideoDecoder::doRebuild() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_FALSE);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, _surface->getWidth(), _surface->getHeight(),
+	const glm::ivec2 surfaceSize = _surface->getSize();
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, surfaceSize.x, surfaceSize.y,
 	             0, GL_BGRA, GL_UNSIGNED_BYTE, _surface->getData());
 }
 
@@ -194,8 +194,10 @@ void VideoDecoder::copyData() {
 	if (_texture == 0)
 		throw Common::Exception("No texture while trying to copy");
 
+	const glm::ivec2 surfaceSize = _surface->getSize();
+
 	glBindTexture(GL_TEXTURE_2D, _texture);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, _surface->getWidth(), _surface->getHeight(),
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, surfaceSize.x, surfaceSize.y,
 	                GL_BGRA, GL_UNSIGNED_BYTE, _surface->getData());
 
 	_needCopy = false;
@@ -217,34 +219,28 @@ void VideoDecoder::update() {
 	copyData();
 }
 
-void VideoDecoder::getQuadDimensions(float &width, float &height) const {
-	width  = _width;
-	height = _height;
-
+glm::vec2 VideoDecoder::getQuadDimensions() const {
 	if (_scale == kScaleNone)
 		// No scaling requested
-		return;
+		return glm::vec2(_size);
 
-	float screenWidth  = GfxMan.getScreenWidth();
-	float screenHeight = GfxMan.getScreenHeight();
+	const glm::uvec2 screenSize = glm::uvec2(GfxMan.getScreenSize());
 
-	if ((_scale == kScaleUp) && (width <= screenWidth) && (height <= screenHeight))
+	if ((_scale == kScaleUp) && glm::all(glm::lessThanEqual(_size, screenSize)))
 		// Only upscaling requested, but not necessary
-		return;
+		return glm::vec2(_size);
 
-	if ((_scale == kScaleDown) && (width >= screenWidth) && (height >= screenHeight))
+	if ((_scale == kScaleDown) && glm::all(glm::greaterThanEqual(_size, screenSize)))
 		// Only downscaling requested, but not necessary
-		return;
+		return glm::vec2(_size);
 
-	float ratio = width / height;
+	const float ratio = _size.x / _size.y;
 
-	width  = screenWidth;
-	height = screenWidth / ratio;
-	if (height <= screenHeight)
-		return;
+	const glm::vec2 size = glm::vec2(screenSize.x, screenSize.x / ratio);
+	if (size.y <= screenSize.y)
+		return size;
 
-	height = screenHeight;
-	width  = screenHeight * ratio;
+  return glm::vec2(screenSize.y * ratio, screenSize.y);
 }
 
 void VideoDecoder::calculateDistance() {
@@ -261,24 +257,21 @@ void VideoDecoder::render(Graphics::RenderPass pass) {
 	update();
 
 	// Get the dimensions of the video surface we want, depending on the scaling requested
-	float width, height;
-	getQuadDimensions(width, height);
+	const glm::vec2 size = getQuadDimensions();
 
 	// Create a textured quad with those dimensions
-
-	float hWidth  = width  / 2.0;
-	float hHeight = height / 2.0;
+	const glm::vec2 hSize = size / 2.0f;
 
 	glBindTexture(GL_TEXTURE_2D, _texture);
 	glBegin(GL_QUADS);
 		glTexCoord2f(0.0, 0.0);
-		glVertex3f(-hWidth, -hHeight, -1.0);
+		glVertex3f(-hSize.x, -hSize.y, -1.0);
 		glTexCoord2f(_textureWidth, 0.0);
-		glVertex3f( hWidth, -hHeight, -1.0);
+		glVertex3f( hSize.x, -hSize.y, -1.0);
 		glTexCoord2f(_textureWidth, _textureHeight);
-		glVertex3f( hWidth,  hHeight, -1.0);
+		glVertex3f( hSize.x,  hSize.y, -1.0);
 		glTexCoord2f(0.0, _textureHeight);
-		glVertex3f(-hWidth,  hHeight, -1.0);
+		glVertex3f(-hSize.x,  hSize.y, -1.0);
 	glEnd();
 }
 

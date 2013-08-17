@@ -142,15 +142,8 @@ public:
 
 	Common::SeekableReadStream *getData(const Common::UString &field) const;
 
-	void getVector     (const Common::UString &field,
-			float &x, float &y, float &z          ) const;
-	void getOrientation(const Common::UString &field,
-			float &a, float &b, float &c, float &d) const;
-
-	void getVector     (const Common::UString &field,
-			double &x, double &y, double &z           ) const;
-	void getOrientation(const Common::UString &field,
-			double &a, double &b, double &c, double &d) const;
+	glm::vec3 getVector     (const Common::UString &field) const;
+	glm::vec4 getOrientation(const Common::UString &field) const;
 
 	const GFFStruct &getStruct(const Common::UString &field) const;
 	const GFFList   &getList  (const Common::UString &field) const;

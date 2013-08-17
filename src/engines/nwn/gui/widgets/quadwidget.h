@@ -53,26 +53,23 @@ class QuadWidget : public NWNWidget {
 public:
 	QuadWidget(::Engines::GUI &gui, const Common::UString &tag,
 	           const Common::UString &texture,
-	           float  x1      , float  y1      , float  x2      , float  y2,
-	           float tX1 = 0.0, float tY1 = 0.0, float tX2 = 1.0, float tY2 = 1.0);
+	           const glm::vec2 &p1, const glm::vec2 &p2,
+	           const glm::vec2 &t1 = glm::vec2(0.0, 0.0),
+	           const glm::vec2 &t2 = glm::vec2(1.0, 1.0));
 	~QuadWidget();
 
 	void show();
 	void hide();
 
-	void setPosition(float x, float y, float z);
+	void setPosition(const glm::vec3 &position);
 	void setColor(float r, float g, float b, float a);
 	void setTexture(const Common::UString &texture);
 
-	void setWidth (float w);
-	void setHeight(float h);
-
-	float getWidth () const;
-	float getHeight() const;
+	void setSize(const glm::vec2 &size);
+	glm::vec2 getSize() const;
 
 private:
-	float _width;
-	float _height;
+	glm::vec2 _size;
 
 	Graphics::Aurora::GUIQuad *_quad;
 };

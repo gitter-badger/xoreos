@@ -41,12 +41,8 @@ DECLARE_SINGLETON(Graphics::CameraManager)
 namespace Graphics {
 
 CameraManager::CameraManager() : _lastChanged(0) {
-	_position   [0] = 0.0;
-	_position   [1] = 0.0;
-	_position   [2] = 0.0;
-	_orientation[0] = 0.0;
-	_orientation[1] = 0.0;
-	_orientation[2] = 0.0;
+	_position    = glm::vec3(0.0, 0.0, 0.0);
+	_orientation = glm::vec3(0.0, 0.0, 0.0);
 }
 
 void CameraManager::lock() {
@@ -57,23 +53,19 @@ void CameraManager::unlock() {
 	_mutex.unlock();
 }
 
-const float *CameraManager::getPosition() const {
+glm::vec3 CameraManager::getPosition() const {
 	return _position;
 }
 
-const float *CameraManager::getOrientation() const {
+glm::vec3 CameraManager::getOrientation() const {
 	return _orientation;
 }
 
 void CameraManager::reset() {
 	Common::StackLock cameraLock(_mutex);
 
-	_position   [0] = 0.0;
-	_position   [1] = 0.0;
-	_position   [2] = 0.0;
-	_orientation[0] = 0.0;
-	_orientation[1] = 0.0;
-	_orientation[2] = 0.0;
+	_position    = glm::vec3(0.0, 0.0, 0.0);
+	_orientation = glm::vec3(0.0, 0.0, 0.0);
 
 	_lastChanged = EventMan.getTimestamp();
 
@@ -82,12 +74,10 @@ void CameraManager::reset() {
 	NotificationMan.cameraMoved();
 }
 
-void CameraManager::setPosition(float x, float y, float z) {
+void CameraManager::setPosition(const glm::vec3 &position) {
 	Common::StackLock cameraLock(_mutex);
 
-	_position[0] = x;
-	_position[1] = y;
-	_position[2] = z;
+	_position    = position;
 
 	_lastChanged = EventMan.getTimestamp();
 
@@ -96,12 +86,10 @@ void CameraManager::setPosition(float x, float y, float z) {
 	NotificationMan.cameraMoved();
 }
 
-void CameraManager::setOrientation(float x, float y, float z) {
+void CameraManager::setOrientation(const glm::vec3 &orientation) {
 	Common::StackLock cameraLock(_mutex);
 
-	_orientation[0] = fmodf(x, 360.0);
-	_orientation[1] = fmodf(y, 360.0);
-	_orientation[2] = fmodf(z, 360.0);
+	_orientation = glm::mod(orientation, 360.0f);
 
 	_lastChanged = EventMan.getTimestamp();
 
@@ -110,20 +98,18 @@ void CameraManager::setOrientation(float x, float y, float z) {
 	NotificationMan.cameraMoved();
 }
 
-void CameraManager::setOrientation(float vX, float vY) {
-	float x, y, z;
+void CameraManager::setOrientation(const glm::vec2 &orientation) {
+	const glm::vec3 o = Common::vector2orientation(orientation);
 
-	Common::vector2orientation(vX, vY, x, y, z);
-
-	setOrientation(x, 360.0 - y, z);
+	setOrientation(glm::vec3(o.x, 360.0 - o.y, o.z));
 }
 
-void CameraManager::turn(float x, float y, float z) {
-	setOrientation(_orientation[0] + x, _orientation[1] + y, _orientation[2] + z);
+void CameraManager::turn(const glm::vec3 &amount) {
+	setOrientation(_orientation + amount);
 }
 
-void CameraManager::move(float x, float y, float z) {
-	setPosition(_position[0] + x, _position[1] + y, _position[2] + z);
+void CameraManager::move(const glm::vec3 &amount) {
+	setPosition(_position + amount);
 }
 
 void CameraManager::move(float n) {
@@ -132,7 +118,7 @@ void CameraManager::move(float n) {
 	float z = n * cos(Common::deg2rad(_orientation[1])) *
 	              cos(Common::deg2rad(_orientation[0]));
 
-	move(x, y, z);
+	move(glm::vec3(x, y, z));
 }
 
 void CameraManager::strafe(float n) {
@@ -141,7 +127,7 @@ void CameraManager::strafe(float n) {
 	float y = n * sin(Common::deg2rad(_orientation[2]));
 	float z = n * cos(Common::deg2rad(_orientation[1] + 90.0));
 
-	move(x, y, z);
+	move(glm::vec3(x, y, z));
 }
 
 void CameraManager::fly(float n) {
@@ -150,7 +136,7 @@ void CameraManager::fly(float n) {
 	              sin(Common::deg2rad(_orientation[2] + 90.0));
 	float z = n * cos(Common::deg2rad(_orientation[0] + 90.0));
 
-	move(x, y, z);
+	move(glm::vec3(x, y, z));
 }
 
 uint32 CameraManager::lastChanged() const {

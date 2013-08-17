@@ -47,8 +47,8 @@ IngameGUI::IngameGUI(Module &module) : _module(&module), _lastCompassChange(0) {
 	_main = new IngameMainMenu;
 
 	_quickbar  = new Quickbar;
-	_quickchat = new Quickchat(_quickbar->getHeight() - 3.0);
-	_compass   = new Compass(_quickbar->getHeight() + _quickchat->getHeight() - 6.0);
+	_quickchat = new Quickchat(_quickbar->getSize().y - 3.0);
+	_compass   = new Compass(_quickbar->getSize().y + _quickchat->getSize().y - 6.0);
 
 	_party.resize(1);
 	_party[0] = new PartyLeader(module);

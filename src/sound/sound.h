@@ -142,10 +142,10 @@ public:
 	// Channel properties
 
 	/** Set the position the channel is being played. */
-	void setChannelPosition(const ChannelHandle &handle, float x, float y, float z);
+	void setChannelPosition(const ChannelHandle &handle, const glm::vec3 &position);
 
 	/** Get the position of the channel. */
-	void getChannelPosition(const ChannelHandle &handle, float &x, float &y, float &z);
+	glm::vec3 getChannelPosition(const ChannelHandle &handle);
 
 	/** Set the gain/volume of the channel. */
 	void setChannelGain(const ChannelHandle &handle, float gain);

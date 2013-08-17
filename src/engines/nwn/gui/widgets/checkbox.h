@@ -55,8 +55,8 @@ public:
 	void enter();
 	void leave();
 
-	void mouseDown(uint8 state, float x, float y);
-	void mouseUp  (uint8 state, float x, float y);
+	void mouseDown(uint8 state, const glm::vec2 &point);
+	void mouseUp  (uint8 state, const glm::vec2 &point);
 
 protected:
 	void signalGroupMemberActive();

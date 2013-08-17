@@ -54,7 +54,7 @@ Portrait::Portrait(const Common::UString &name, Size size,
 	setSize();
 	setPortrait(name);
 
-	setPosition(0.0, 0.0, -FLT_MAX);
+	setPosition(glm::vec3(0.0, 0.0, -FLT_MAX));
 }
 
 Portrait::~Portrait() {
@@ -95,54 +95,40 @@ void Portrait::createBorder() {
 	_qBorder[3].vX[3] = x + width          ; _qBorder[3].vY[3] = y + height + _border;
 }
 
-float Portrait::getWidth() const {
-	return ABS(_qPortrait.vX[0] - _qPortrait.vX[1]) + _border + _border;
+glm::vec2 Portrait::getSize() const {
+	return glm::abs(glm::vec2(_qPortrait.vX[0] - _qPortrait.vX[1], _qPortrait.vY[0] - _qPortrait.vY[2])) + _border + _border;
 }
 
-float Portrait::getHeight() const {
-	return ABS(_qPortrait.vY[0] - _qPortrait.vY[2]) + _border + _border;
-}
-
-void Portrait::setPosition(float x, float y, float z) {
+void Portrait::setPosition(const glm::vec3 &position) {
 	GfxMan.lockFrame();
 
 	float width  = ABS(_qPortrait.vX[0] - _qPortrait.vX[1]);
 	float height = ABS(_qPortrait.vY[0] - _qPortrait.vY[2]);
 
-	x += _border;
-	y += _border;
+	glm::vec3 p = position;
+	p.x += _border;
+	p.y += _border;
 
-	_qPortrait.vX[0] = x        ; _qPortrait.vY[0] = y         ;
-	_qPortrait.vX[1] = x + width; _qPortrait.vY[1] = y         ;
-	_qPortrait.vX[2] = x + width; _qPortrait.vY[2] = y + height;
-	_qPortrait.vX[3] = x        ; _qPortrait.vY[3] = y + height;
+	_qPortrait.vX[0] = p.x        ; _qPortrait.vY[0] = p.y         ;
+	_qPortrait.vX[1] = p.x + width; _qPortrait.vY[1] = p.y         ;
+	_qPortrait.vX[2] = p.x + width; _qPortrait.vY[2] = p.y + height;
+	_qPortrait.vX[3] = p.x        ; _qPortrait.vY[3] = p.y + height;
 
 	createBorder();
 
-	_distance = z;
+	_distance = p.z;
 	resort();
 
 	GfxMan.unlockFrame();
 }
 
-void Portrait::getPosition(float &x, float &y, float &z) const {
-	x = _qPortrait.vX[0];
-	y = _qPortrait.vY[0];
-	z = _distance;
+glm::vec3 Portrait::getPosition() const {
+	return glm::vec3(_qPortrait.vX[0], _qPortrait.vY[0], _distance);
 }
 
-bool Portrait::isIn(float x, float y) const {
-	float x1 = _qPortrait.vX[0];
-	float x2 = _qPortrait.vX[0] + getWidth();
-	float y1 = _qPortrait.vY[0];
-	float y2 = _qPortrait.vY[0] + getHeight();
-
-	if ((x < x1) || (x > x2))
-		return false;
-	if ((y < y1) || (y > y2))
-		return false;
-
-	return true;
+bool Portrait::isIn(const glm::vec2 &point) const {
+	const glm::vec2 position = glm::vec2(_qPortrait.vX[0], _qPortrait.vY[0]);
+	return Common::insideOf(point, position, position + getSize());
 }
 
 void Portrait::calculateDistance() {
@@ -247,23 +233,19 @@ void PortraitWidget::hide() {
 	NWNWidget::hide();
 }
 
-void PortraitWidget::setPosition(float x, float y, float z) {
-	NWNWidget::setPosition(x, y, z);
+void PortraitWidget::setPosition(const glm::vec3 &position) {
+	NWNWidget::setPosition(position);
 
-	getPosition(x, y, z);
-	_portrait.setPosition(x, y, z);
+	const glm::vec3 p = getPosition();
+	_portrait.setPosition(p);
 }
 
 void PortraitWidget::setPortrait(const Common::UString &name) {
 	_portrait.setPortrait(name);
 }
 
-float PortraitWidget::getWidth() const {
-	return _portrait.getWidth();
-}
-
-float PortraitWidget::getHeight() const {
-	return _portrait.getHeight();
+glm::vec2 PortraitWidget::getSize() const {
+	return _portrait.getSize();
 }
 
 void PortraitWidget::setTag(const Common::UString &tag) {

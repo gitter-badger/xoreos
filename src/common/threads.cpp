@@ -31,6 +31,7 @@
 #define COMMON_THREADS_H
 
 #include <SDL_thread.h>
+#include <X11/Xlib.h>
 
 #include "common/types.h"
 #include "common/error.h"
@@ -42,6 +43,8 @@ namespace Common {
 
 void initThreads() {
 	assert(!threadsInited);
+
+	XInitThreads();
 
 	threadsInited = true;
 	threadsMainID = SDL_ThreadID();

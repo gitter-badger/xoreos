@@ -40,7 +40,8 @@ class WidgetPanel : public KotORWidget {
 public:
 	WidgetPanel(::Engines::GUI &gui, const Common::UString &tag);
 	WidgetPanel(::Engines::GUI &gui, const Common::UString &tag,
-	            const Common::UString &texture, float x, float y, float w, float h);
+              const Common::UString &texture,
+              const glm::vec2 &position, const glm::vec2 &size);
 	~WidgetPanel();
 
 	void load(const Aurora::GFFStruct &gff);

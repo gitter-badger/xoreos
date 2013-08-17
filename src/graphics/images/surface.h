@@ -36,11 +36,10 @@ namespace Graphics {
 
 class Surface : public ImageDecoder {
 public:
-	Surface(int width, int height);
+	Surface(const glm::ivec2 &size);
 	~Surface();
 
-	int getWidth () const;
-	int getHeight() const;
+	glm::ivec2 getSize() const;
 
 	byte *getData();
 	const byte *getData() const;

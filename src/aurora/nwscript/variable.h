@@ -61,7 +61,7 @@ public:
 	Variable(Object *value);
 	Variable(const EngineType *value);
 	Variable(const EngineType &value);
-	Variable(float x, float y, float z);
+	Variable(const glm::vec3 &vector);
 	Variable(const Variable &var);
 	~Variable();
 
@@ -72,6 +72,7 @@ public:
 	Variable &operator=(int32 value);
 	Variable &operator=(float value);
 	Variable &operator=(const Common::UString &value);
+	Variable &operator=(const glm::vec3 &vector);
 	Variable &operator=(Object *value);
 	Variable &operator=(const EngineType *value);
 	Variable &operator=(const EngineType &value);
@@ -88,8 +89,7 @@ public:
 	Object *getObject() const;
 	EngineType *getEngineType() const;
 
-	void setVector(float  x, float  y, float  z);
-	void getVector(float &x, float &y, float &z) const;
+	glm::vec3 getVector() const;
 
 	ScriptState &getScriptState();
 	const ScriptState &getScriptState() const;
@@ -102,7 +102,7 @@ private:
 		float _float;
 		Common::UString *_string;
 		Object *_object;
-		float _vector[3];
+		glm::vec3 *_vector;
 		ScriptState *_scriptState;
 		EngineType *_engineType;
 	} _value;

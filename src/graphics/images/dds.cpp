@@ -87,8 +87,9 @@ void DDS::readStandardHeader(Common::SeekableReadStream &dds) {
 	uint32 flags = dds.readUint32LE();
 
 	// Image dimensions
-	uint32 height = dds.readUint32LE();
-	uint32 width  = dds.readUint32LE();
+	glm::uvec2 size;
+	size.y = dds.readUint32LE();
+	size.x = dds.readUint32LE();
 
 	dds.skip(4 + 4); // Pitch + Depth
 	//uint32 pitchOrLineSize = dds.readUint32LE();
@@ -121,13 +122,11 @@ void DDS::readStandardHeader(Common::SeekableReadStream &dds) {
 	for (uint32 i = 0; i < mipMapCount; i++) {
 		MipMap *mipMap = new MipMap;
 
-		mipMap->width  = MAX<uint32>(width , 1);
-		mipMap->height = MAX<uint32>(height, 1);
+		mipMap->size = glm::max(size, glm::uvec2(1, 1));
 
 		setSize(*mipMap);
 
-		width  >>= 1;
-		height >>= 1;
+		size >>= 1;
 
 		_mipMaps.push_back(mipMap);
 	}
@@ -139,12 +138,13 @@ void DDS::readBioWareHeader(Common::SeekableReadStream &dds) {
 	dds.seek(0);
 
 	// Image dimensions
-	uint32 width  = dds.readUint32LE();
-	uint32 height = dds.readUint32LE();
+	glm::uvec2 size;
+	size.x = dds.readUint32LE();
+	size.y = dds.readUint32LE();
 
 	// Check that the width and height are really powers of 2
-	if (!IsPower2(width) || !IsPower2(height))
-		throw Common::Exception("Width and height must be powers of 2");
+	if (!IsPower2(size.x) || !IsPower2(size.y))
+		throw Common::Exception("size.x and size.y must be powers of 2");
 
 	// Always compressed
 	_compressed = true;
@@ -166,9 +166,9 @@ void DDS::readBioWareHeader(Common::SeekableReadStream &dds) {
 
 	// Sanity check for the image data size
 	uint32 dataSize = dds.readUint32LE();
-	if (((bpp == 3) && (dataSize != ((width * height) / 2))) ||
-		  ((bpp == 4) && (dataSize != ((width * height)    ))))
-		throw Common::Exception("Invalid data size (%dx%dx%d %d)", width, height, bpp, dataSize);
+	if (((bpp == 3) && (dataSize != ((size.x * size.y) / 2))) ||
+	    ((bpp == 4) && (dataSize != ((size.x * size.y)    ))))
+		throw Common::Exception("Invalid data size (%dx%dx%d %d)", size.x, size.y, bpp, dataSize);
 
 	dds.skip(4); // Some float
 
@@ -179,8 +179,7 @@ void DDS::readBioWareHeader(Common::SeekableReadStream &dds) {
 	do {
 		MipMap *mipMap = new MipMap;
 
-		mipMap->width  = MAX<uint32>(width,  1);
-		mipMap->height = MAX<uint32>(height, 1);
+		mipMap->size = glm::max(size, glm::uvec2(1, 1));
 
 		setSize(*mipMap);
 
@@ -194,29 +193,28 @@ void DDS::readBioWareHeader(Common::SeekableReadStream &dds) {
 
 		_mipMaps.push_back(mipMap);
 
-		width  >>= 1;
-		height >>= 1;
+		size >>= 1;
 
-	} while ((width >= 1) && (height >= 1));
+	} while ((size.x >= 1) && (size.y >= 1));
 }
 
 void DDS::setSize(MipMap &mipMap) {
 	// Depending on the pixel format, set the image data size in bytes
 
 	if (_formatRaw == kPixelFormatDXT1) {
-		mipMap.data.resize(((mipMap.width + 3) / 4) * ((mipMap.height + 3) / 4) *  8);
+		mipMap.data.resize(((mipMap.size.x + 3) / 4) * ((mipMap.size.y + 3) / 4) *  8);
 	} else if (_formatRaw == kPixelFormatDXT3) {
-		mipMap.data.resize(((mipMap.width + 3) / 4) * ((mipMap.height + 3) / 4) * 16);
+		mipMap.data.resize(((mipMap.size.x + 3) / 4) * ((mipMap.size.y + 3) / 4) * 16);
 	} else if (_formatRaw == kPixelFormatDXT5) {
-		mipMap.data.resize(((mipMap.width + 3) / 4) * ((mipMap.height + 3) / 4) * 16);
+		mipMap.data.resize(((mipMap.size.x + 3) / 4) * ((mipMap.size.y + 3) / 4) * 16);
 	} else if (_formatRaw == kPixelFormatRGBA8) {
-		mipMap.data.resize(mipMap.width * mipMap.height * 4);
+		mipMap.data.resize(mipMap.size.x * mipMap.size.y * 4);
 	} else if (_formatRaw == kPixelFormatRGB8) {
-		mipMap.data.resize(mipMap.width * mipMap.height * 3);
+		mipMap.data.resize(mipMap.size.x * mipMap.size.y * 3);
 	} else if (_formatRaw == kPixelFormatRGB5A1) {
-		mipMap.data.resize(mipMap.width * mipMap.height * 2);
+		mipMap.data.resize(mipMap.size.x * mipMap.size.y * 2);
 	} else if (_formatRaw == kPixelFormatRGB5) {
-		mipMap.data.resize(mipMap.width * mipMap.height * 2);
+		mipMap.data.resize(mipMap.size.x * mipMap.size.y * 2);
 	} else
 		mipMap.data.clear();
 }

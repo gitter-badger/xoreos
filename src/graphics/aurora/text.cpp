@@ -40,7 +40,7 @@ namespace Aurora {
 
 Text::Text(const FontHandle &font, const Common::UString &str,
 		float r, float g, float b, float a, float align) :
-	_r(r), _g(g), _b(b), _a(a), _font(font), _x(0.0), _y(0.0), _align(align) {
+	_r(r), _g(g), _b(b), _a(a), _font(font), _position(0.0, 0.0), _align(align) {
 
 	set(str);
 
@@ -62,8 +62,8 @@ void Text::set(const Common::UString &str) {
 
 	_lineCount = font.getLineCount(_str);
 
-	_height = font.getHeight(_str);
-	_width  = font.getWidth (_str);
+	_size.x = font.getHeight(_str);
+	_size.y = font.getWidth (_str);
 
 	GfxMan.unlockFrame();
 }
@@ -94,19 +94,19 @@ const Common::UString &Text::get() const {
 	return _str;
 }
 
-void Text::getPosition(float &x, float &y, float &z) const {
-	x = _x;
-	y = _y;
-	z = _distance;
+glm::vec3 Text::getPosition() const {
+	return glm::vec3(_position, _distance);
 }
 
-void Text::setPosition(float x, float y, float z) {
+void Text::setPosition(const glm::vec2 &position) {
+	setPosition(glm::vec3(position, -FLT_MAX));
+}
+
+void Text::setPosition(const glm::vec3 &position) {
 	GfxMan.lockFrame();
 
-	_x = roundf(x);
-	_y = roundf(y);
-
-	_distance = z;
+	_position = glm::round(glm::vec2(position));
+	_distance = position.z;
 	resort();
 
 	GfxMan.unlockFrame();
@@ -120,12 +120,8 @@ uint32 Text::getLineCount() const {
 	return _lineCount;
 }
 
-float Text::getWidth() const {
-	return _width;
-}
-
-float Text::getHeight() const {
-	return _height;
+glm::vec2 Text::getSize() const {
+	return _size;
 }
 
 void Text::calculateDistance() {
@@ -136,19 +132,13 @@ void Text::render(RenderPass pass) {
 	if (pass == kRenderPassOpaque)
 		return;
 
-	glTranslatef(_x, _y, 0.0);
+	glTranslatef(_position.x, _position.y, 0.0);
 
-	_font.getFont().draw(_str, _colors, _r, _g, _b, _a, _align);
+	_font.getFont().draw(_str, _colors, glm::vec4(_r, _g, _b, _a), _align);
 }
 
-bool Text::isIn(float x, float y) const {
-	if ((x < _x) || (y < _y))
-		return false;
-
-	if ((x > (_x + _width)) || (y > (_y + _height)))
-		return false;
-
-	return true;
+bool Text::isIn(const glm::vec2 &point) const {
+	return Common::insideOf(point, _position.xy(), _position.xy() + _size);
 }
 
 void Text::parseColors(const Common::UString &str, Common::UString &parsed,
@@ -213,10 +203,10 @@ void Text::parseColors(const Common::UString &str, Common::UString &parsed,
 			color.position     = parsed.size();
 			color.defaultColor = false;
 
-			color.r = colorValue[0] / 255.0;
-			color.g = colorValue[1] / 255.0;
-			color.b = colorValue[2] / 255.0;
-			color.a = colorValue[3] / 255.0;
+			color.color.r = colorValue[0] / 255.0;
+			color.color.g = colorValue[1] / 255.0;
+			color.color.b = colorValue[2] / 255.0;
+			color.color.a = colorValue[3] / 255.0;
 
 			colors.push_back(color);
 

@@ -537,10 +537,9 @@ void ScriptFunctions::actionMoveToLocation(Aurora::NWScript::FunctionContext &ct
 	if (!object || !moveTo)
 		return;
 
-	float x, y, z;
-	moveTo->getPosition(x, y, z);
+	const glm::vec3 position = moveTo->getPosition();
 
-	jumpTo(object, moveTo->getArea(), x, y, z);
+	jumpTo(object, moveTo->getArea(), position);
 
 	bool run = ctx.getParams()[1].getInt() != 0;
 
@@ -556,10 +555,9 @@ void ScriptFunctions::actionMoveToObject(Aurora::NWScript::FunctionContext &ctx)
 	if (!object || !moveTo)
 		return;
 
-	float x, y, z;
-	moveTo->getPosition(x, y, z);
+	const glm::vec3 position = moveTo->getPosition();
 
-	jumpTo(object, moveTo->getArea(), x, y, z);
+	jumpTo(object, moveTo->getArea(), position);
 
 	bool  run   = ctx.getParams()[1].getInt() != 0;
 	float range = ctx.getParams()[2].getFloat();
@@ -589,16 +587,15 @@ void ScriptFunctions::getExitingObject(Aurora::NWScript::FunctionContext &ctx) {
 }
 
 void ScriptFunctions::getPosition(Aurora::NWScript::FunctionContext &ctx) {
-	ctx.getReturn().setVector(0.0f, 0.0f, 0.0f);
+	ctx.getReturn() = glm::vec3(0.0f, 0.0f, 0.0f);
 
 	Object *object = convertObject(ctx.getParams()[0].getObject());
 	if (!object)
 		return;
 
-	float x, y, z;
-	object->getPosition(x, y, z);
+	const glm::vec3 position = object->getPosition();
 
-	ctx.getReturn().setVector(x, y, z);
+	ctx.getReturn() = position;
 }
 
 void ScriptFunctions::getFacing(Aurora::NWScript::FunctionContext &ctx) {
@@ -761,13 +758,10 @@ void ScriptFunctions::getDistanceToObject(Aurora::NWScript::FunctionContext &ctx
 	if (!object1 || !object2)
 		return;
 
-	float x1, y1, z1;
-	object1->getPosition(x1, y1, z1);
+	const glm::vec3 o1pos = object1->getPosition();
+	const glm::vec3 o2pos = object2->getPosition();
 
-	float x2, y2, z2;
-	object2->getPosition(x2, y2, z2);
-
-	ctx.getReturn() = sqrtf(SQR(x1 - x2) + SQR(y1 - y2) + SQR(z1 - z2));
+	ctx.getReturn() = glm::distance(o1pos, o2pos);
 }
 #undef SQR
 

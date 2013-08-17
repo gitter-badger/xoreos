@@ -60,20 +60,19 @@ public:
 	         float bR = 1.0, float bG = 1.0, float bB = 1.0, float bA = 1.0);
 	~Portrait();
 
-	float getWidth () const; ///< Get the scrollbar's width.
-	float getHeight() const; ///< Get the scrollbar's height.
+	glm::vec2 getSize() const; ///< Get the scrollbar's [width,height].
 
 	/** Set the current portrait. */
 	void setPortrait(const Common::UString &name);
 
 	/** Set the current position of the portrait. */
-	void setPosition(float x, float y, float z);
+	void setPosition(const glm::vec3 &position);
 
 	/** Get the current position of the portrait. */
-	void getPosition(float &x, float &y, float &z) const;
+	glm::vec3 getPosition() const;
 
 	/** Is the point within the portrait? */
-	bool isIn(float x, float y) const;
+	bool isIn(const glm::vec2 &point) const;
 
 	// Renderable
 	void calculateDistance();
@@ -114,12 +113,11 @@ public:
 	void show();
 	void hide();
 
-	void setPosition(float x, float y, float z);
+	void setPosition(const glm::vec3 &position);
 
 	void setPortrait(const Common::UString &name);
 
-	float getWidth () const;
-	float getHeight() const;
+	glm::vec2 getSize() const;
 
 	void setTag(const Common::UString &tag);
 

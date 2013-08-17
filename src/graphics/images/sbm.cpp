@@ -70,9 +70,9 @@ void SBM::readData(Common::SeekableReadStream &sbm) {
 
 	_mipMaps.push_back(new MipMap);
 
-	_mipMaps[0]->width  = 4 * 32;
-	_mipMaps[0]->height = NEXTPOWER2((uint32) rowCount * 32);
-	_mipMaps[0]->data.resize(_mipMaps[0]->width * _mipMaps[0]->height * 4);
+	_mipMaps[0]->size.x = 4 * 32;
+	_mipMaps[0]->size.y = NEXTPOWER2((uint32) rowCount * 32);
+	_mipMaps[0]->data.resize(_mipMaps[0]->size.x * _mipMaps[0]->size.y * 4);
 
 	// SBM data consists of character sized 32 * 32 pixels, with 2 bits per pixel.
 	// 4 characters each are on top of each other, occupying the same x/y

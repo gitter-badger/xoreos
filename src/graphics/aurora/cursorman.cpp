@@ -80,14 +80,14 @@ void CursorManager::clear() {
 }
 
 bool CursorManager::add(const Common::UString &name, const Common::UString &group,
-                        const Common::UString &state, int hotspotX, int hotspotY) {
+                        const Common::UString &state, const glm::ivec2 &hotspot) {
 
 	Common::StackLock lock(_mutex);
 
 	Cursor *cursor = 0;
 	try {
 
-		cursor = new Cursor(name, hotspotX, hotspotY);
+		cursor = new Cursor(name, hotspot);
 
 		CursorMap::iterator g = _cursors.find(group);
 		if (g == _cursors.end()) {
@@ -163,28 +163,33 @@ void CursorManager::set(const Common::UString &group, const Common::UString &sta
 	update();
 }
 
-uint8 CursorManager::getPosition(int &x, int &y) const {
-	return SDL_GetMouseState(&x, &y);
+glm::ivec2 CursorManager::getPosition() const {
+	int x = 0;
+	int y = 0;
+
+	SDL_GetMouseState(&x, &y);
+
+	return glm::ivec2(x, y);
 }
 
-void CursorManager::setPosition(int x, int y) {
-	SDL_WarpMouse(x, y);
+uint8 CursorManager::getState() const {
+	return SDL_GetMouseState(NULL, NULL);
 }
 
-void CursorManager::toScreenCoordinates(int x, int y, float &sX, float &sY) {
-	const float sW = GfxMan.getScreenWidth();
-	const float sH = GfxMan.getScreenHeight();
-
-	sX =       ((float) x)  - (sW / 2.0);
-	sY = (sH - ((float) y)) - (sH / 2.0);
+void CursorManager::setPosition(const glm::ivec2 &cursor) {
+	SDL_WarpMouse(cursor.x, cursor.y);
 }
 
-void CursorManager::fromScreenCoordinates(float sX, float sY, int &x, int &y) {
-	const float sW = GfxMan.getScreenWidth();
-	const float sH = GfxMan.getScreenHeight();
+glm::vec2 CursorManager::toScreenCoordinates(const glm::ivec2 &cursor) {
+	const glm::ivec2 halfs = GfxMan.getScreenSize() / 2;
 
-	x = (int)   sX + (sW / 2.0);
-	y = (int) (-sY - (sH / 2.0)) + sH;
+	return glm::vec2(cursor.x  - halfs.x, halfs.y - cursor.y);
+}
+
+glm::ivec2 CursorManager::fromScreenCoordinates(const glm::vec2 &screen) {
+	const glm::ivec2 halfs = GfxMan.getScreenSize() / 2;
+
+	return glm::ivec2(screen.x + halfs.x, halfs.y - screen.y);
 }
 
 void CursorManager::hideCursor() {

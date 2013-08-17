@@ -491,11 +491,10 @@ void ScriptFunctions::soundObjectSetPosition(Aurora::NWScript::FunctionContext &
 	if (!object)
 		return;
 
-	float x, y, z;
-	ctx.getParams()[1].getVector(x, y, z);
+	const glm::vec3 position = ctx.getParams()[1].getVector();
 
 	warning("TODO: SoundObjectSetPosition: \"%s\" to [%f, %f, %f]",
-	        object->getTag().c_str(), x, y, z);
+	        object->getTag().c_str(), position.x, position.y, position.z);
 }
 
 void ScriptFunctions::speakOneLinerConversation(Aurora::NWScript::FunctionContext &ctx) {

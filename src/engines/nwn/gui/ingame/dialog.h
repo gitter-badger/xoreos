@@ -69,7 +69,7 @@ class Module;
 
 class DialogBox : public Graphics::GUIFrontElement {
 public:
-	DialogBox(float width, float height);
+	DialogBox(const glm::vec2 &size);
 	~DialogBox();
 
 	void show(); ///< Show the box.
@@ -77,14 +77,13 @@ public:
 
 	// Size and position
 
-	float getWidth () const; ///< Return the box's width.
-	float getHeight() const; ///< Return the box's height.
+	glm::vec2 getSize() const; ///< Return the box's [width,height].
 
 	/** Return the box's position. */
-	void getPosition(float &x, float &y, float &z) const;
+	glm::vec3 getPosition() const;
 
 	/** Set the box's position. */
-	void setPosition(float x, float y, float z);
+	void setPosition(const glm::vec3 &position);
 
 	// Changing contents
 
@@ -111,9 +110,9 @@ public:
 	// Events
 
 	/** Notify the box that the mouse was moved. */
-	void mouseMove(int x, int y);
+	void mouseMove(const glm::ivec2 &point);
 	/** Notify the box that the mouse was clicked. */
-	void mouseClick(int x, int y);
+	void mouseClick(const glm::ivec2 &point);
 	/** Pick the reply number n. */
 	void pickReply(uint32 n);
 
@@ -145,12 +144,8 @@ private:
 		ReplyLine(std::list<Reply>::const_iterator &i);
 	};
 
-	float _width;  ///< The box's width.
-	float _height; ///< The box's height.
-
-	float _x; ///< The box's X position.
-	float _y; ///< The box's Y position.
-	float _z; ///< The box's Z position.
+	glm::vec2 _size;  ///< The box's [width,height].
+	glm::vec3 _position; ///< The box's [x,y,z] position.
 
 	/** The current speaker's portrait. */
 	Portrait *_portrait;
@@ -180,7 +175,7 @@ private:
 	void hideReplies(); ///< Hide the replies.
 
 	/** Are the coordinates inside the box? */
-	bool isIn(float x, float y) const;
+	bool isIn(const glm::vec2 &point) const;
 
 	/** Set the highlighted reply. */
 	void setHighlight(const std::list<ReplyLine>::iterator &h);
@@ -206,7 +201,7 @@ public:
 	int processEventQueue();
 
 protected:
-	void notifyResized(int oldWidth, int oldHeight, int newWidth, int newHeight);
+	void notifyResized(const glm::ivec2 &oldSize, const glm::ivec2 &newSize);
 
 private:
 	Common::UString _conv; ///< The conversation file.

@@ -48,8 +48,8 @@ namespace Graphics {
 
 namespace Aurora {
 
-Cursor::Cursor(const Common::UString &name, int hotspotX, int hotspotY) :
-	_name(name), _hotspotX(hotspotX), _hotspotY(hotspotY) {
+Cursor::Cursor(const Common::UString &name, const glm::ivec2 &hotspot) :
+	_name(name), _hotspot(hotspot) {
 
 	load();
 }
@@ -61,20 +61,19 @@ void Cursor::render() {
 	TextureMan.activeTexture(0);
 	TextureMan.set(_texture);
 
-	int x, y;
-	CursorMan.getPosition(x, y);
+	const glm::ivec2 cursor = CursorMan.getPosition();
 
-	glTranslatef(x - _hotspotX, -y - _height + _hotspotY, 0.0);
+	glTranslatef(cursor.x - _hotspot.x, -cursor.y - _size.y + _hotspot.x, 0.0);
 
 	glBegin(GL_QUADS);
 		glTexCoord2f(0.0, 0.0);
 		glVertex2f(0.0, 0.0);
 		glTexCoord2f(1.0, 0.0);
-		glVertex2f(_height, 0.0);
+		glVertex2f(_size.y, 0.0);
 		glTexCoord2f(1.0, 1.0);
-		glVertex2f(_height, _width);
+		glVertex2f(_size.y, _size.x);
 		glTexCoord2f(0.0, 1.0);
-		glVertex2f(0.0, _width);
+		glVertex2f(0.0, _size.x);
 	glEnd();
 }
 
@@ -85,8 +84,7 @@ void Cursor::load() {
 	if (!img)
 		throw Common::Exception("No such cursor resource \"%s\"", _name.c_str());
 
-	_hotspotX = 0;
-	_hotspotY = 0;
+	_hotspot = glm::ivec2(0, 0);
 
 	ImageDecoder *image;
 	// Loading the different image formats
@@ -97,10 +95,10 @@ void Cursor::load() {
 	else if (type == ::Aurora::kFileTypeCUR) {
 		WinIconImage *cursor = new WinIconImage(*img);
 
-		if (_hotspotX < 0)
-			_hotspotX = cursor->getHotspotX();
-		if (_hotspotY < 0)
-			_hotspotY = cursor->getHotspotY();
+		if (_hotspot.x < 0)
+			_hotspot.x = cursor->getHotspotX();
+		if (_hotspot.y < 0)
+			_hotspot.y = cursor->getHotspotY();
 
 		image = cursor;
 	} else {
@@ -110,8 +108,7 @@ void Cursor::load() {
 
 	delete img;
 
-	_width  = image->getMipMap(0).width;
-	_height = image->getMipMap(0).height;
+	_size  = image->getMipMap(0).size;
 
 	TXI txi;
 	txi.getFeatures().filter = false;
@@ -133,8 +130,7 @@ void Cursor::load() {
 		throw;
 	}
 
-	_hotspotX = CLIP(_hotspotX, 0, _width  - 1);
-	_hotspotY = CLIP(_hotspotY, 0, _height - 1);
+	_hotspot = glm::clamp(_hotspot, glm::ivec2(0, 0), glm::ivec2(_size) - 1);
 }
 
 } // End of namespace Aurora

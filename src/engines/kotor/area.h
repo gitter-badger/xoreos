@@ -162,7 +162,7 @@ private:
 
 	void checkActive();
 	void setActive(Object *object);
-	Object *getObjectAt(int x, int y);
+	Object *getObjectAt(const glm::ivec2 &point);
 
 	void highlightAll(bool enabled);
 

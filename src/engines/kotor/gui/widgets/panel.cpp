@@ -43,15 +43,14 @@ WidgetPanel::WidgetPanel(::Engines::GUI &gui, const Common::UString &tag) :
 
 WidgetPanel::WidgetPanel(::Engines::GUI &gui, const Common::UString &tag,
                          const Common::UString &texture,
-                         float x, float y, float w, float h) : KotORWidget(gui, tag) {
+                         const glm::vec2 &position, const glm::vec2 &size) : KotORWidget(gui, tag) {
 
-	_width  = w;
-	_height = h;
+	_size = size;
 
-	Widget::setPosition(x, y, 0.0);
+	Widget::setPosition(glm::vec3(position, 0.0));
 
-	_quad = new Graphics::Aurora::GUIQuad(texture, 0.0, 0.0, w, h);
-	_quad->setPosition(x, y, 0.0);
+	_quad = new Graphics::Aurora::GUIQuad(texture, glm::vec2(0.0, 0.0), size);
+	_quad->setPosition(glm::vec3(position, 0.0));
 }
 
 WidgetPanel::~WidgetPanel() {

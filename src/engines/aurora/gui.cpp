@@ -44,7 +44,7 @@ static const uint32 kDoubleClickTime = 500;
 
 namespace Engines {
 
-GUI::GUI() : _currentWidget(0), _returnCode(0), _x(0.0), _y(0.0), _z(0.0) {
+GUI::GUI() : _currentWidget(0), _returnCode(0), _position() {
 }
 
 GUI::~GUI() {
@@ -257,32 +257,22 @@ int GUI::sub(GUI &gui, int startCode, bool showSelf) {
 	return code;
 }
 
-void GUI::setPosition(float x, float y, float z) {
+void GUI::setPosition(const glm::vec3 &position) {
 	for (WidgetList::iterator w = _widgets.begin(); w != _widgets.end(); ++w) {
 		Widget &widget = **w;
 
 		if (widget._parent)
 			continue;
 
-		float wX, wY, wZ;
-		widget.getPosition(wX, wY, wZ);
-
-		wX -= _x;
-		wY -= _y;
-		wZ -= _z;
-
-		widget.setPosition(wX + x, wY + y, wZ + z);
+		const glm::vec3 wpos = widget.getPosition();
+		widget.setPosition(wpos - _position + position);
 	}
 
-	_x = x;
-	_y = y;
-	_z = z;
+	_position = position;
 }
 
-void GUI::getPosition(float &x, float &y, float &z) const {
-	x = _x;
-	y = _y;
-	z = _z;
+glm::vec3 GUI::getPosition() const {
+	return _position;
 }
 
 void GUI::removeFocus() {
@@ -291,21 +281,21 @@ void GUI::removeFocus() {
 
 void GUI::updateMouse() {
 	// Fabricate a mouse move event at the current position
-	int x, y, state;
-	state = CursorMan.getPosition(x, y);
+	const glm::ivec2 cursor = CursorMan.getPosition();
+	const uint8 state = CursorMan.getState();
 
 	Events::Event event;
 	event.motion.state = state;
-	event.motion.x     = x;
-	event.motion.y     = y;
+	event.motion.x     = cursor.x;
+	event.motion.y     = cursor.y;
 
 	// Trigger a mouse move
 	mouseMove(event);
 }
 
-Widget *GUI::getWidgetAt(float x, float y) {
+Widget *GUI::getWidgetAt(const glm::vec2 &point) {
 	// Get the GFX object at the position
-	Graphics::Renderable *obj = GfxMan.getObjectAt(x, y);
+	Graphics::Renderable *obj = GfxMan.getObjectAt(point);
 	if (!obj)
 		return 0;
 
@@ -356,7 +346,7 @@ void GUI::checkWidgetActive(Widget *widget) {
 }
 
 void GUI::mouseMove(const Events::Event &event) {
-	Widget *widget = getWidgetAt(event.motion.x, event.motion.y);
+	Widget *widget = getWidgetAt(glm::vec2(event.motion.x, event.motion.y));
 
 	if (event.motion.state != 0) {
 		// Moves with a mouse button pressed sends move events to the current widget
@@ -376,7 +366,7 @@ void GUI::mouseDown(const Events::Event &event) {
 		// We only care about left mouse button presses, and the wheel
 		return;
 
-	Widget *widget = getWidgetAt(event.button.x, event.button.y);
+	Widget *widget = getWidgetAt(glm::vec2(event.button.x, event.button.y));
 	if (widget != _currentWidget)
 		changedWidget(widget);
 
@@ -388,7 +378,7 @@ void GUI::mouseUp(const Events::Event &event) {
 		// We only care about left mouse button presses
 		return;
 
-	Widget *widget = getWidgetAt(event.button.x, event.button.y);
+	Widget *widget = getWidgetAt(glm::vec2(event.button.x, event.button.y));
 	if (widget != _currentWidget) {
 		changedWidget(widget);
 		return;
@@ -401,48 +391,41 @@ void GUI::mouseUp(const Events::Event &event) {
 	updateMouse();
 }
 
-float GUI::toGUIX(int x) {
-	float sW = GfxMan.getScreenWidth();
+glm::vec2 GUI::toGUI(const glm::ivec2 &event) {
+	const glm::ivec2 size = GfxMan.getScreenSize();
 
-	return (x - (sW / 2.0));
-}
-
-float GUI::toGUIY(int y) {
-	float sH = GfxMan.getScreenHeight();
-
-	return ((sH - y) - (sH / 2.0));
+	return glm::vec2(event.x - (size.x / 2.0),
+	                (size.y / 2.0) - event.y);
 }
 
 void GUI::mouseMove(Widget *widget, const Events::Event &event) {
 	if (widget)
-		widget->mouseMove(event.motion.state, toGUIX(event.motion.x), toGUIY(event.motion.y));
+		widget->mouseMove(event.motion.state, toGUI(glm::ivec2(event.motion.x, event.motion.y)));
 }
 
 void GUI::mouseDown(Widget *widget, const Events::Event &event) {
 	if (widget)
-		widget->mouseDown(event.button.button, toGUIX(event.button.x), toGUIY(event.button.y));
+		widget->mouseDown(event.button.button, toGUI(glm::ivec2(event.button.x, event.button.y)));
 }
 
 void GUI::mouseUp(Widget *widget, const Events::Event &event) {
 	if (widget) {
 		uint8 button = event.button.button;
-		float x      = toGUIX(event.button.x);
-		float y      = toGUIY(event.button.y);
+		const glm::vec2 gpos = toGUI(glm::ivec2(event.button.x, event.button.y));
 
-		widget->mouseUp(button, x, y);
+		widget->mouseUp(button, gpos);
 
 		uint32 curTime = EventMan.getTimestamp();
 		if (((curTime - widget->_lastClickTime) < kDoubleClickTime) &&
 		    (widget->_lastClickButton == button) &&
-		    (widget->_lastClickX == x) && (widget->_lastClickY == y)) {
+		    (widget->_lastClickPosition == gpos)) {
 
-			widget->mouseDblClick(button, x, y);
+			widget->mouseDblClick(button, gpos);
 		}
 
-		widget->_lastClickButton = button;
-		widget->_lastClickTime   = curTime;
-		widget->_lastClickX      = x;
-		widget->_lastClickY      = y;
+		widget->_lastClickButton   = button;
+		widget->_lastClickTime     = curTime;
+		widget->_lastClickPosition = gpos;
 	}
 }
 

@@ -59,14 +59,13 @@ public:
 private:
 	/** A font character. */
 	struct Char {
-		uint32 dataX;
-		uint32 dataY;
-		uint8  width;
-		int8   spaceL;
-		int8   spaceR;
+		glm::uvec2 position;
+		uint8      width;
+		int8       spaceL;
+		int8       spaceR;
 
-		float tX[4], tY[4];
-		float vX[4], vY[4];
+		glm::vec2 tpos[4];
+		glm::vec2 vpos[4];
 	};
 
 	TextureHandle _texture;

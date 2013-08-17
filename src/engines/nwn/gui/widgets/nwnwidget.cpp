@@ -66,8 +66,8 @@ void NWNWidget::leave() {
 		_tooltip->hide();
 }
 
-void NWNWidget::setPosition(float x, float y, float z) {
-	Widget::setPosition(x, y, z);
+void NWNWidget::setPosition(const glm::vec3 &position) {
+	Widget::setPosition(position);
 
 	if (_tooltip)
 		_tooltip->updatePosition();
@@ -80,10 +80,10 @@ void NWNWidget::setTooltip(const Common::UString &text) {
 	_tooltip->addLine(text, 1.0, 1.0, 1.0, 1.0);
 }
 
-void NWNWidget::setTooltipPosition(float x, float y, float z) {
+void NWNWidget::setTooltipPosition(const glm::vec3 &position) {
 	createTooltip();
 
-	_tooltip->setPosition(x, y, z);
+	_tooltip->setPosition(position);
 }
 
 void NWNWidget::createTooltip() {

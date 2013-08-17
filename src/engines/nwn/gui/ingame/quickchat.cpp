@@ -52,7 +52,7 @@ ChatModeButton::ChatModeButton(::Engines::GUI &gui, const Common::UString &tag,
 
 	setMode(mode);
 
-	setPosition(0.0, 0.0, 0.0);
+	setPosition(glm::vec3(0.0, 0.0, 0.0));
 
 	addSub(*_label);
 }
@@ -78,18 +78,18 @@ void ChatModeButton::setMode(ChatMode mode) {
 	_label->setText(TalkMan.getString(66751 + (int) _mode) + ":");
 }
 
-void ChatModeButton::setPosition(float x, float y, float z) {
-	WidgetButton::setPosition(x, y, z);
+void ChatModeButton::setPosition(const glm::vec3 &position) {
+	WidgetButton::setPosition(position);
 
-	getPosition(x, y, z);
+	const glm::vec3 p = getPosition();
 
 	Graphics::Aurora::ModelNode *node = 0;
 
-	float tX = 0.0, tY = 0.0, tZ = 0.0;
+	glm::vec3 t = glm::vec3(0.0, 0.0, 0.0);
 	if ((node = _model->getNode("text")))
-		node->getPosition(tX, tY, tZ);
+		t = node->getPosition();
 
-	_label->setPosition(x + tX, y + tY - (_label->getHeight() / 2.0), z - tZ);
+	_label->setPosition(p + glm::vec3(t.x, t.y - (_label->getSize().y / 2.0), -t.z));
 }
 
 void ChatModeButton::setTag(const Common::UString &tag) {
@@ -104,7 +104,7 @@ Quickchat::Quickchat(float position) {
 
 	_prompt = new WidgetPanel(*this, "QCPrompt", "pnl_chat_prompt");
 
-	_prompt->setPosition(0.0, position, 0.0);
+	_prompt->setPosition(glm::vec3(0.0, position, 0.0));
 
 	addWidget(_prompt);
 
@@ -114,30 +114,25 @@ Quickchat::Quickchat(float position) {
 	ChatModeButton *modeButton =
 		new ChatModeButton(*this, "QCMode", "ctl_btn_chatmode", kModeTalk);
 
-	modeButton->setPosition(0.0, position, -10.0);
+	modeButton->setPosition(glm::vec3(0.0, position, -10.0));
 
 	addWidget(modeButton);
 
-
-	notifyResized(0, 0, GfxMan.getScreenWidth(), GfxMan.getScreenHeight());
+	notifyResized(glm::ivec2(0, 0), GfxMan.getScreenSize());
 }
 
 Quickchat::~Quickchat() {
 }
 
-float Quickchat::getWidth() const {
-	return _prompt->getWidth();
-}
-
-float Quickchat::getHeight() const {
-	return _prompt->getHeight();
+glm::vec2 Quickchat::getSize() const {
+	return _prompt->getSize();
 }
 
 void Quickchat::callbackActive(Widget &widget) {
 }
 
-void Quickchat::notifyResized(int oldWidth, int oldHeight, int newWidth, int newHeight) {
-	setPosition(- (newWidth / 2.0), - (newHeight / 2.0), -10.0);
+void Quickchat::notifyResized(const glm::ivec2 &oldSize, const glm::ivec2 &newSize) {
+	setPosition(-glm::vec3(newSize, 20) / 2.0f);
 }
 
 } // End of namespace NWN

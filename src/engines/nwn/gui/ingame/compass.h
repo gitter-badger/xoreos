@@ -46,7 +46,7 @@ public:
 	CompassWidget(::Engines::GUI &gui, const Common::UString &tag);
 	~CompassWidget();
 
-	void setRotation(float x, float y, float z);
+	void setRotation(const glm::vec3 &rotation);
 };
 
 /** The NWN ingame compass. */
@@ -61,7 +61,7 @@ protected:
 private:
 	CompassWidget *_compass;
 
-	void notifyResized(int oldWidth, int oldHeight, int newWidth, int newHeight);
+	void notifyResized(const glm::ivec2 &oldSize, const glm::ivec2 &newSize);
 	void notifyCameraMoved();
 };
 

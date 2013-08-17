@@ -59,7 +59,7 @@ private:
 	void readData(Common::SeekableReadStream &tpc, bool needDeSwizzle);
 	void readTXIData(Common::SeekableReadStream &tpc);
 
-	static void deSwizzle(byte *dst, const byte *src, uint32 width, uint32 height);
+	static void deSwizzle(byte *dst, const byte *src, const glm::uvec2 &size);
 };
 
 } // End of namespace Graphics

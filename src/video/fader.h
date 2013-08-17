@@ -37,7 +37,7 @@ namespace Video {
 /** A quick test fader "video". */
 class Fader : public VideoDecoder {
 public:
-	Fader(uint32 width, uint32 height, int n);
+	Fader(const glm::uvec2 &size, int n);
 	~Fader();
 
 	bool hasTime() const;

@@ -103,10 +103,18 @@ static inline float deg2rad(float deg) {
 	return deg * M_PI / 180.0;
 }
 
-static inline void vector2orientation(float vX, float vY, float &x, float &y, float &z) {
-	x = 0.0;
-	y = rad2deg(atan2(vY, vX)) - 90.0;
-	z = 0.0;
+static inline glm::vec3 vector2orientation(const glm::vec2 &vector) {
+	return glm::vec3(0.0, rad2deg(atan2(vector.y, vector.x)) - 90.0, 0.0);
+}
+
+template<class T, template<class> class vecType>
+static inline bool outsideOf(const vecType<T>& point, const vecType<T>& min, const vecType<T>& max) {
+	return glm::any(glm::lessThan(point, min)) || glm::any(glm::greaterThan(point, max));
+}
+
+template<class T, template<class> class vecType>
+static inline bool insideOf(const vecType<T>& point, const vecType<T>& min, const vecType<T>& max) {
+	return !outsideOf(point, min, max);
 }
 
 } // End of namespace Common

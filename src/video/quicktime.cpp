@@ -127,7 +127,7 @@ QuickTimeDecoder::QuickTimeDecoder(Common::SeekableReadStream *stream) : VideoDe
 	// Yeah, this wouldn't be a video if there's no video stream :P
 	assert(_videoTrackIndex >= 0);
 
-	initVideo(_tracks[_videoTrackIndex]->width, _tracks[_videoTrackIndex]->height);
+	initVideo(glm::uvec2(_tracks[_videoTrackIndex]->width, _tracks[_videoTrackIndex]->height));
 
 	// Initialize video codec, if present
 	for (uint32 i = 0; i < _tracks[_videoTrackIndex]->sampleDescs.size(); i++)

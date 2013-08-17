@@ -40,11 +40,10 @@ namespace Graphics {
 namespace Aurora {
 
 GUIQuad::GUIQuad(const Common::UString &texture,
-                 float x1 , float y1 , float x2 , float y2,
-                 float tX1, float tY1, float tX2, float tY2) :
+	               const glm::vec2 &p1, const glm::vec2 &p2,
+	               const glm::vec2 &t1, const glm::vec2 &t2) :
 	_r(1.0), _g(1.0), _b(1.0), _a(1.0),
-	_x1 (x1) , _y1 (y1) , _x2 (x2) , _y2 (y2) ,
-	_tX1(tX1), _tY1(tY1), _tX2(tX2), _tY2(tY2),
+	_p1(p1), _p2(p2), _t1(t1), _t2(t2),
 	_xor(false) {
 
 	try {
@@ -65,22 +64,17 @@ GUIQuad::~GUIQuad() {
 	hide();
 }
 
-void GUIQuad::getPosition(float &x, float &y, float &z) const {
-	x = MIN(_x1, _x2);
-	y = MIN(_y1, _y2);
-	z = _distance;
+glm::vec3 GUIQuad::getPosition() const {
+	return glm::vec3(MIN(_p1.x, _p2.x), MIN(_p1.y, _p2.y), _distance);
 }
 
-void GUIQuad::setPosition(float x, float y, float z) {
+void GUIQuad::setPosition(const glm::vec3 &position) {
 	GfxMan.lockFrame();
 
-	_x2 = _x2 - _x1 + x;
-	_y2 = _y2 - _y1 + y;
+	_p2 += glm::vec2(position) - _p1;
+	_p1  = glm::vec2(position);
 
-	_x1 = x;
-	_y1 = y;
-
-	_distance = z;
+	_distance = position.z;
 	resort();
 
 	GfxMan.unlockFrame();
@@ -125,26 +119,14 @@ void GUIQuad::setTexture(const Common::UString &texture) {
 	GfxMan.unlockFrame();
 }
 
-float GUIQuad::getWidth() const {
-	return ABS(_x2 - _x1);
+glm::vec2 GUIQuad::getSize() const {
+	return glm::abs(_p2 - _p1);
 }
 
-float GUIQuad::getHeight() const {
-	return ABS(_y2 - _y1);
-}
-
-void GUIQuad::setWidth(float w) {
+void GUIQuad::setSize(const glm::vec2 &size) {
 	GfxMan.lockFrame();
 
-	_x2 = _x1 + w;
-
-	GfxMan.unlockFrame();
-}
-
-void GUIQuad::setHeight(float h) {
-	GfxMan.lockFrame();
-
-	_y2 = _y1 + h;
+	_p2 = _p1 + size;
 
 	GfxMan.unlockFrame();
 }
@@ -157,13 +139,8 @@ void GUIQuad::setXOR(bool enabled) {
 	GfxMan.unlockFrame();
 }
 
-bool GUIQuad::isIn(float x, float y) const {
-	if ((x < _x1) || (x > _x2))
-		return false;
-	if ((y < _y1) || (y > _y2))
-		return false;
-
-	return true;
+bool GUIQuad::isIn(const glm::vec2 &point) const {
+	return Common::insideOf(point, _p1, _p2);
 }
 
 void GUIQuad::calculateDistance() {
@@ -185,14 +162,14 @@ void GUIQuad::render(RenderPass pass) {
 	}
 
 	glBegin(GL_QUADS);
-		glTexCoord2f(_tX1, _tY1);
-		glVertex2f(_x1, _y1);
-		glTexCoord2f(_tX2, _tY1);
-		glVertex2f(_x2, _y1);
-		glTexCoord2f(_tX2, _tY2);
-		glVertex2f(_x2, _y2);
-		glTexCoord2f(_tX1, _tY2);
-		glVertex2f(_x1, _y2);
+		glTexCoord2f(_t1.x, _t1.y);
+		glVertex2f(_p1.x, _p1.y);
+		glTexCoord2f(_t2.x, _t1.y);
+		glVertex2f(_p2.x, _p1.y);
+		glTexCoord2f(_t2.x, _t2.y);
+		glVertex2f(_p2.x, _p2.y);
+		glTexCoord2f(_t1.x, _t2.y);
+		glVertex2f(_p1.x, _p2.y);
 	glEnd();
 
 	if (_xor)

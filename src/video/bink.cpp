@@ -282,9 +282,9 @@ void Bink::videoPacket(VideoFrame &video) {
 	// Convert the YUVA data we have to BGRA
 	assert(_surface && _curPlanes[0] && _curPlanes[1] && _curPlanes[2] && _curPlanes[3]);
 	YUVToRGBMan.convert420(Graphics::YUVToRGBManager::kScaleITU,
-			_surface->getData(), _surface->getWidth() * 4,
+			_surface->getData(), _surface->getSize().x * 4,
 			_curPlanes[0], _curPlanes[1], _curPlanes[2], _curPlanes[3],
-			_width, _height, _width, _width >> 1);
+			_size.x, _size.y, _size.x, _size.x >> 1);
 
 	// And swap the planes with the reference planes
 	for (int i = 0; i < 4; i++)
@@ -293,10 +293,10 @@ void Bink::videoPacket(VideoFrame &video) {
 
 void Bink::decodePlane(VideoFrame &video, int planeIdx, bool isChroma) {
 
-	uint32 blockWidth  = isChroma ? ((_width  + 15) >> 4) : ((_width  + 7) >> 3);
-	uint32 blockHeight = isChroma ? ((_height + 15) >> 4) : ((_height + 7) >> 3);
-	uint32 width       = isChroma ?  (_width        >> 1) :   _width;
-	uint32 height      = isChroma ?  (_height       >> 1) :   _height;
+	uint32 blockWidth  = isChroma ? ((_size.x + 15) >> 4) : ((_size.x + 7) >> 3);
+	uint32 blockHeight = isChroma ? ((_size.y + 15) >> 4) : ((_size.y + 7) >> 3);
+	uint32 width       = isChroma ?  (_size.x       >> 1) :   _size.x;
+	uint32 height      = isChroma ?  (_size.y       >> 1) :   _size.y;
 
 	DecodeContext ctx;
 
@@ -506,10 +506,11 @@ void Bink::load() {
 
 	_bink->skip(4);
 
-	uint32 width  = _bink->readUint32LE();
-	uint32 height = _bink->readUint32LE();
+	glm::uvec2 size;
+	size.x = _bink->readUint32LE();
+	size.y = _bink->readUint32LE();
 
-	initVideo(width, height);
+	initVideo(size);
 
 	_fpsNum = _bink->readUint32LE();
 	_fpsDen = _bink->readUint32LE();
@@ -567,27 +568,27 @@ void Bink::load() {
 	_swapPlanes = (_id == kBIKhID) || (_id == kBIKiID); // BIKh and BIKi swap the chroma planes
 
 	// Give the planes a bit extra space
-	width  = _width  + 32;
-	height = _height + 32;
+	size.x = _size.x + 32;
+	size.y = _size.y + 32;
 
-	_curPlanes[0] = new byte[ width       *  height      ]; // Y
-	_curPlanes[1] = new byte[(width >> 1) * (height >> 1)]; // U, 1/4 resolution
-	_curPlanes[2] = new byte[(width >> 1) * (height >> 1)]; // V, 1/4 resolution
-	_curPlanes[3] = new byte[ width       *  height      ]; // A
-	_oldPlanes[0] = new byte[ width       *  height      ]; // Y
-	_oldPlanes[1] = new byte[(width >> 1) * (height >> 1)]; // U, 1/4 resolution
-	_oldPlanes[2] = new byte[(width >> 1) * (height >> 1)]; // V, 1/4 resolution
-	_oldPlanes[3] = new byte[ width       *  height      ]; // A
+	_curPlanes[0] = new byte[ size.x       *  size.y      ]; // Y
+	_curPlanes[1] = new byte[(size.x >> 1) * (size.y >> 1)]; // U, 1/4 resolution
+	_curPlanes[2] = new byte[(size.x >> 1) * (size.y >> 1)]; // V, 1/4 resolution
+	_curPlanes[3] = new byte[ size.x       *  size.y      ]; // A
+	_oldPlanes[0] = new byte[ size.x       *  size.y      ]; // Y
+	_oldPlanes[1] = new byte[(size.x >> 1) * (size.y >> 1)]; // U, 1/4 resolution
+	_oldPlanes[2] = new byte[(size.x >> 1) * (size.y >> 1)]; // V, 1/4 resolution
+	_oldPlanes[3] = new byte[ size.x       *  size.y      ]; // A
 
 	// Initialize the video with solid black
-	memset(_curPlanes[0],   0,  width       *  height      );
-	memset(_curPlanes[1],   0, (width >> 1) * (height >> 1));
-	memset(_curPlanes[2],   0, (width >> 1) * (height >> 1));
-	memset(_curPlanes[3], 255,  width       *  height      );
-	memset(_oldPlanes[0],   0,  width       *  height      );
-	memset(_oldPlanes[1],   0, (width >> 1) * (height >> 1));
-	memset(_oldPlanes[2],   0, (width >> 1) * (height >> 1));
-	memset(_oldPlanes[3], 255,  width       *  height      );
+	memset(_curPlanes[0],   0,  size.x       *  size.y      );
+	memset(_curPlanes[1],   0, (size.x >> 1) * (size.y >> 1));
+	memset(_curPlanes[2],   0, (size.x >> 1) * (size.y >> 1));
+	memset(_curPlanes[3], 255,  size.x       *  size.y      );
+	memset(_oldPlanes[0],   0,  size.x       *  size.y      );
+	memset(_oldPlanes[1],   0, (size.x >> 1) * (size.y >> 1));
+	memset(_oldPlanes[2],   0, (size.x >> 1) * (size.y >> 1));
+	memset(_oldPlanes[3], 255,  size.x       *  size.y      );
 
 	initBundles();
 	initHuffman();
@@ -667,8 +668,8 @@ void Bink::initAudioTrack(AudioTrack &audio) {
 }
 
 void Bink::initBundles() {
-	uint32 bw     = (_width  + 7) >> 3;
-	uint32 bh     = (_height + 7) >> 3;
+	uint32 bw     = (_size.x + 7) >> 3;
+	uint32 bh     = (_size.y + 7) >> 3;
 	uint32 blocks = bw * bh;
 
 	for (int i = 0; i < kSourceMAX; i++) {
@@ -676,8 +677,8 @@ void Bink::initBundles() {
 		_bundles[i].dataEnd = _bundles[i].data + blocks * 64;
 	}
 
-	uint32 cbw[2] = { (_width + 7) >> 3, (_width  + 15) >> 4 };
-	uint32 cw [2] = {  _width          ,  _width        >> 1 };
+	uint32 cbw[2] = { (_size.x+ 7) >> 3, (_size.x + 15) >> 4 };
+	uint32 cw [2] = {  _size.x         ,  _size.x       >> 1 };
 
 	// Calculate the lengths of an element count in bits
 	for (int i = 0; i < 2; i++) {

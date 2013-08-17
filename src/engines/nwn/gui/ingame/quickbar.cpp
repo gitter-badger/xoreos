@@ -85,19 +85,15 @@ void QuickbarButton::hide() {
 	_model->hide();
 }
 
-void QuickbarButton::setPosition(float x, float y, float z) {
-	NWNWidget::setPosition(x, y, z);
+void QuickbarButton::setPosition(const glm::vec3 &position) {
+	NWNWidget::setPosition(position);
 
-	getPosition(x, y, z);
-	_model->setPosition(x, y, z);
+	const glm::vec3 p = getPosition();
+	_model->setPosition(p);
 }
 
-float QuickbarButton::getWidth() const {
-	return _model->getWidth();
-}
-
-float QuickbarButton::getHeight() const {
-	return _model->getHeight();
+glm::vec2 QuickbarButton::getSize() const {
+	return glm::vec2(_model->getSize());
 }
 
 void QuickbarButton::setTag(const Common::UString &tag) {
@@ -110,31 +106,27 @@ Quickbar::Quickbar() {
 	WidgetPanel *bottomEdge = new WidgetPanel(*this, "QBBottomEdge", "pnl_quick_bar");
 	addWidget(bottomEdge);
 
-	_edgeHeight = bottomEdge->getHeight();
+	_edgeHeight = bottomEdge->getSize().y;
 
 	for (int i = 0; i < 12; i++) {
 		QuickbarButton *button = new QuickbarButton(*this, i);
 
-		button->setPosition(i * _slotWidth, bottomEdge->getHeight(), 0.0);
+		button->setPosition(glm::vec3(i * _slotSize.x, bottomEdge->getSize().y, 0.0));
 		addWidget(button);
 	}
 
 	WidgetPanel *topEdge = new WidgetPanel(*this, "QBTopEdge", "pnl_quick_bar");
-	topEdge->setPosition(0.0, _slotHeight, 0.0);
+	topEdge->setPosition(glm::vec3(0.0, _slotSize.y, 0.0));
 	addWidget(topEdge);
 
-	notifyResized(0, 0, GfxMan.getScreenWidth(), GfxMan.getScreenHeight());
+	notifyResized(glm::ivec2(0, 0), GfxMan.getScreenSize());
 }
 
 Quickbar::~Quickbar() {
 }
 
-float Quickbar::getWidth() const {
-	return 12 * _slotWidth;
-}
-
-float Quickbar::getHeight() const {
-	return _slotHeight + 2 * _edgeHeight;
+glm::vec2 Quickbar::getSize() const {
+	return glm::vec2(12 * _slotSize.x, _slotSize.y + 2 * _edgeHeight);
 }
 
 void Quickbar::callbackActive(Widget &widget) {
@@ -143,14 +135,13 @@ void Quickbar::callbackActive(Widget &widget) {
 void Quickbar::getSlotSize() {
 	Graphics::Aurora::Model *_model = loadModelGUI("qb_but67");
 
-	_slotWidth  = floorf(_model->getWidth());
-	_slotHeight = floorf(_model->getHeight());
+	_slotSize = glm::floor(glm::vec2(_model->getSize()));
 
 	delete _model;
 }
 
-void Quickbar::notifyResized(int oldWidth, int oldHeight, int newWidth, int newHeight) {
-	setPosition(- ((12 * _slotWidth) / 2.0), - (newHeight / 2.0), -10.0);
+void Quickbar::notifyResized(const glm::ivec2 &oldSize, const glm::ivec2 &newSize) {
+	setPosition(glm::vec3(- ((12 * _slotSize.x) / 2.0), - (newSize.y / 2.0), -10.0));
 }
 
 } // End of namespace NWN

@@ -50,11 +50,12 @@ public:
 	~Text();
 
 	const Common::UString &get() const;
-	void getPosition(float &x, float &y, float &z) const;
+	glm::vec3 getPosition() const;
 	void getColor(float &r, float &g, float &b, float &a) const;
 
 	void set(const Common::UString &str);
-	void setPosition(float x, float y, float z = -FLT_MAX);
+	void setPosition(const glm::vec2 &position);
+	void setPosition(const glm::vec3 &position);
 	void setColor(float r, float g, float b, float a);
 	void unsetColor();
 
@@ -62,25 +63,22 @@ public:
 
 	uint getLineCount() const;
 
-	float getWidth()  const;
-	float getHeight() const;
+	glm::vec2 getSize() const;
 
 	// Renderable
 	void calculateDistance();
 	void render(RenderPass pass);
-	bool isIn(float x, float y) const;
+	bool isIn(const glm::vec2 &point) const;
 
 private:
 	float _r, _g, _b, _a;
 	FontHandle _font;
 
-	float _x;
-	float _y;
+	glm::vec2 _position;
 
 	uint32 _lineCount;
 
-	float _width;
-	float _height;
+	glm::vec2 _size;
 
 	float _align;
 

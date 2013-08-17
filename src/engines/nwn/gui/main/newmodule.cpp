@@ -58,7 +58,7 @@ WidgetListItemModule::WidgetListItemModule(::Engines::GUI &gui,
 
 	Common::UString splitText;
 	Graphics::Aurora::FontHandle f = FontMan.get(font);
-	f.getFont().split(text, splitText, _button->getWidth() - 8.0);
+	f.getFont().split(text, splitText, _button->getSize().x - 8.0);
 
 	_text = new Graphics::Aurora::Text(f, splitText, 1.0, 1.0, 1.0, 1.0, 0.5);
 }
@@ -78,24 +78,17 @@ void WidgetListItemModule::hide() {
 	_button->hide();
 }
 
-void WidgetListItemModule::setPosition(float x, float y, float z) {
-	NWNWidget::setPosition(x, y, z);
+void WidgetListItemModule::setPosition(const glm::vec3 &position) {
+	NWNWidget::setPosition(position);
 
-	getPosition(x, y, z);
-	_button->setPosition(x, y, z);
+	const glm::vec3 p = getPosition();
+	_button->setPosition(p);
 
-	x = x + (_button->getWidth () - _text->getWidth ()) / 2.0;
-	y = y + (_button->getHeight() - _text->getHeight()) / 2.0;
-
-	_text->setPosition(x, y, z - 1.0);
+	_text->setPosition(p + glm::vec3((glm::vec2(_button->getSize()) - _text->getSize()) / 2.0f, -1.0));
 }
 
-float WidgetListItemModule::getWidth() const {
-	return _button->getWidth();
-}
-
-float WidgetListItemModule::getHeight() const {
-	return _button->getHeight() + _spacing;
+glm::vec2 WidgetListItemModule::getSize() const {
+	return glm::vec2(_button->getSize()) + glm::vec2(0.0, _spacing);
 }
 
 void WidgetListItemModule::setTag(const Common::UString &tag) {

@@ -73,13 +73,11 @@ void Item::loadModel() {
 
 	// Positioning
 
-	float x, y, z;
+	const glm::vec3 position = getPosition();
+	setPosition(position);
 
-	getPosition(x, y, z);
-	setPosition(x, y, z);
-
-	getOrientation(x, y, z);
-	setOrientation(x, y, z);
+	const glm::vec3 orientation = getOrientation();
+	setOrientation(orientation);
 
 	// Clickable
 

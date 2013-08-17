@@ -88,28 +88,24 @@ void WidgetListItemCharacter::hide() {
 	_portrait->hide();
 }
 
-void WidgetListItemCharacter::setPosition(float x, float y, float z) {
-	NWNWidget::setPosition(x, y, z);
+void WidgetListItemCharacter::setPosition(const glm::vec3 &position) {
+	NWNWidget::setPosition(position);
 
-	getPosition(x, y, z);
-	_button->setPosition(x, y, z);
+	glm::vec3 p = getPosition();
+	_button->setPosition(p);
 
-	z -= 5.0;
+	p.z -= 5.0;
 
-	_portrait->setPosition(x + 8.0, y + 7.0, z);
+	_portrait->setPosition(p + glm::vec3(8.0, 7.0, 0.0));
 
-	x += 32.0;
+	p.x += 32.0;
 
-	_textName->setPosition (x, y + _button->getHeight() -     _textName->getHeight() - 4.0, z);
-	_textClass->setPosition(x, y + _button->getHeight() - 2 * _textName->getHeight() - 4.0, z);
+	_textName->setPosition (glm::vec3(p.x, p.y + _button->getSize().y -     _textName->getSize().y - 4.0, p.z));
+	_textClass->setPosition(glm::vec3(p.x, p.y + _button->getSize().y - 2 * _textName->getSize().y - 4.0, p.z));
 }
 
-float WidgetListItemCharacter::getWidth() const {
-	return _button->getWidth();
-}
-
-float WidgetListItemCharacter::getHeight() const {
-	return _button->getHeight() + _spacing;
+glm::vec2 WidgetListItemCharacter::getSize() const {
+	return glm::vec2(_button->getSize()) + glm::vec2(0.0, _spacing);
 }
 
 void WidgetListItemCharacter::setTag(const Common::UString &tag) {

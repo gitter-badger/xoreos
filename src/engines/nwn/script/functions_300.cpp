@@ -488,10 +488,9 @@ void ScriptFunctions::jumpToLocation(Aurora::NWScript::FunctionContext &ctx) {
 	if (!object || !moveTo)
 		return;
 
-	float x, y, z;
-	moveTo->getPosition(x, y, z);
+	const glm::vec3 position = moveTo->getPosition();
 
-	jumpTo(object, moveTo->getArea(), x, y, z);
+	jumpTo(object, moveTo->getArea(), position);
 }
 
 void ScriptFunctions::effectTemporaryHitpoints(Aurora::NWScript::FunctionContext &ctx) {
@@ -950,10 +949,9 @@ void ScriptFunctions::jumpToObject(Aurora::NWScript::FunctionContext &ctx) {
 	if (!object || !moveTo)
 		return;
 
-	float x, y, z;
-	moveTo->getPosition(x, y, z);
+	const glm::vec3 position = moveTo->getPosition();
 
-	jumpTo(object, moveTo->getArea(), x, y, z);
+	jumpTo(object, moveTo->getArea(), position);
 }
 
 void ScriptFunctions::setMapPinEnabled(Aurora::NWScript::FunctionContext &ctx) {

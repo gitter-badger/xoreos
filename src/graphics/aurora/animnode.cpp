@@ -76,15 +76,12 @@ void AnimNode::update(Model *model, float lastFrame, float nextFrame, float scal
 		return;
 
 	// Determine the corresponding keyframes
-	float posX, posY, posZ;
-	_nodedata->interpolatePosition(nextFrame, posX, posY, posZ);
-
-	float oX, oY, oZ, oA;
-	_nodedata->interpolateOrientation(nextFrame, oX, oY, oZ, oA);
+	const glm::vec3 position    = _nodedata->interpolatePosition(nextFrame);
+	const glm::vec4 orientation = _nodedata->interpolateOrientation(nextFrame);
 
 	// Update the position/orientation of corresponding modelnode
-	target->setPosition(posX * scale, posY * scale, posZ * scale);
-	target->setOrientation(oX, oY, oZ, oA);
+	target->setPosition(position * scale);
+	target->setOrientation(glm::vec3(orientation), orientation.a);
 }
 
 } // End of namespace Aurora

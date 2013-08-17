@@ -56,8 +56,8 @@ public:
 	void show();
 	void hide();
 
-	void setPosition(float x, float y, float z);
-	void setOrientation(float x, float y, float z);
+	void setPosition(const glm::vec3 &position);
+	void setOrientation(const glm::vec3 &orientation);
 
 	void enter();
 	void leave();

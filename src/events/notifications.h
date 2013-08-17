@@ -59,7 +59,7 @@ public:
 	void init();
 
 	/** Notify all Notifyables that the screen size changed. */
-	void resized(int oldWidth, int oldHeight, int newWidth, int newHeight);
+	void resized(const glm::ivec2 &oldSize, const glm::ivec2 &newSize);
 	/** Notify all Notifyables that the camera moved. */
 	void cameraMoved();
 

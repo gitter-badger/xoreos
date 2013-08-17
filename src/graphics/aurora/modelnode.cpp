@@ -148,16 +148,8 @@ const Common::UString &ModelNode::getName() const {
 	return _name;
 }
 
-float ModelNode::getWidth() const {
-	return _boundBox.getWidth() * _model->_modelScale[0];
-}
-
-float ModelNode::getHeight() const {
-	return _boundBox.getHeight() * _model->_modelScale[1];
-}
-
-float ModelNode::getDepth() const {
-	return _boundBox.getDepth() * _model->_modelScale[2];
+glm::vec3 ModelNode::getSize() const {
+	return _boundBox.getSize() * _model->_modelScale;
 }
 
 bool ModelNode::isInFrontOf(const ModelNode &node) const {
@@ -169,37 +161,26 @@ bool ModelNode::isInFrontOf(const ModelNode &node) const {
 	return _position[2] < node._position[2];
 }
 
-void ModelNode::getPosition(float &x, float &y, float &z) const {
-	x = _position[0] * _model->_modelScale[0];
-	y = _position[1] * _model->_modelScale[1];
-	z = _position[2] * _model->_modelScale[2];
+glm::vec3 ModelNode::getPosition() const {
+	return _position * _model->_modelScale;
 }
 
-void ModelNode::getRotation(float &x, float &y, float &z) const {
-	x = _rotation[0];
-	y = _rotation[1];
-	z = _rotation[2];
+glm::vec3 ModelNode::getRotation() const {
+	return _rotation;
 }
 
-void ModelNode::getOrientation(float &x, float &y, float &z, float &a) const {
-	x = _orientation[0];
-	y = _orientation[1];
-	z = _orientation[2];
-	a = _orientation[3];
+glm::vec4 ModelNode::getOrientation() const {
+	return _orientation;
 }
 
-void ModelNode::getAbsolutePosition(float &x, float &y, float &z) const {
-	x = _absolutePosition.getX() * _model->_modelScale[0];
-	y = _absolutePosition.getY() * _model->_modelScale[1];
-	z = _absolutePosition.getZ() * _model->_modelScale[2];
+glm::vec3 ModelNode::getAbsolutePosition() const {
+	return glm::vec3(glm::column(_absolutePosition, 4)) * _model->_modelScale;
 }
 
-void ModelNode::setPosition(float x, float y, float z) {
+void ModelNode::setPosition(const glm::vec3 &position) {
 	GfxMan.lockFrame();
 
-	_position[0] = x / _model->_modelScale[0];
-	_position[1] = y / _model->_modelScale[1];
-	_position[2] = z / _model->_modelScale[2];
+	_position = position / _model->_modelScale;
 
 	if (_parent)
 		_parent->orderChildren();
@@ -209,40 +190,32 @@ void ModelNode::setPosition(float x, float y, float z) {
 	GfxMan.unlockFrame();
 }
 
-void ModelNode::setRotation(float x, float y, float z) {
+void ModelNode::setRotation(const glm::vec3 &rotation) {
 	GfxMan.lockFrame();
 
-	_rotation[0] = x;
-	_rotation[1] = y;
-	_rotation[2] = z;
+	_rotation = rotation;
 
 	_model->needRebuild();
 
 	GfxMan.unlockFrame();
 }
 
-void ModelNode::setOrientation(float x, float y, float z, float a) {
+void ModelNode::setOrientation(const glm::vec3 &axis, float angle) {
 	GfxMan.lockFrame();
 
-	_orientation[0] = x;
-	_orientation[1] = y;
-	_orientation[2] = z;
-	_orientation[3] = a;
+	_orientation = glm::vec4(axis, angle);
 
 	_model->needRebuild();
 
 	GfxMan.unlockFrame();
 }
 
-void ModelNode::move(float x, float y, float z) {
-	float curX, curY, curZ;
-	getPosition(curX, curY, curZ);
-
-	setPosition(curX + x, curY + y, curZ + z);
+void ModelNode::move(const glm::vec3 &amount) {
+	setPosition(getPosition() + amount);
 }
 
-void ModelNode::rotate(float x, float y, float z) {
-	setRotation(_rotation[0] + x, _rotation[1] + y, _rotation[2] + z);
+void ModelNode::rotate(const glm::vec3 &amount) {
+	setRotation(_rotation + amount);
 }
 
 void ModelNode::inheritPosition(ModelNode &node) const {
@@ -264,9 +237,8 @@ void ModelNode::inheritGeometry(ModelNode &node) const {
 	node._isTransparent = _isTransparent;
 	node._vertexBuffer  = _vertexBuffer;
 	node._indexBuffer   = _indexBuffer;
-
-	memcpy(node._center, _center, 3 * sizeof(float));
-	node._boundBox = _boundBox;
+	node._center        = _center;
+	node._boundBox      = _boundBox;
 }
 
 void ModelNode::reparent(ModelNode &parent) {
@@ -393,20 +365,16 @@ void ModelNode::createBound() {
 	float *vY = vX + 1;
 	float *vZ = vY + 1;
 	for (uint32 v = 0; v < _vertexBuffer.getCount(); v++)
-		_boundBox.add(vX[v * stride], vY[v * stride], vZ[v * stride]);
+		_boundBox.add(glm::vec3(vX[v * stride], vY[v * stride], vZ[v * stride]));
 
 	createCenter();
 }
 
 void ModelNode::createCenter() {
+	const glm::vec3 min = _boundBox.getMin();
+	const glm::vec3 max = _boundBox.getMax();
 
-	float minX, minY, minZ, maxX, maxY, maxZ;
-	_boundBox.getMin(minX, minY, minZ);
-	_boundBox.getMax(maxX, maxY, maxZ);
-
-	_center[0] = minX + ((maxX - minX) / 2.0);
-	_center[1] = minY + ((maxY - minY) / 2.0);
-	_center[2] = minZ + ((maxZ - minZ) / 2.0);
+	_center = min + ((max - min) / 2.0f);
 }
 
 const Common::BoundingBox &ModelNode::getAbsoluteBound() const {
@@ -415,12 +383,12 @@ const Common::BoundingBox &ModelNode::getAbsoluteBound() const {
 
 void ModelNode::createAbsoluteBound(Common::BoundingBox parentPosition) {
 	// Transform by our position/orientation/rotation
-	parentPosition.translate(_position[0], _position[1], _position[2]);
-	parentPosition.rotate(_orientation[3], _orientation[0], _orientation[1], _orientation[2]);
+	parentPosition.translate(_position);
+	parentPosition.rotate(_orientation.a, glm::vec3(_orientation));
 
-	parentPosition.rotate(_rotation[0], 1.0, 0.0, 0.0);
-	parentPosition.rotate(_rotation[1], 0.0, 1.0, 0.0);
-	parentPosition.rotate(_rotation[2], 0.0, 0.0, 1.0);
+	parentPosition.rotate(_rotation.x, glm::vec3(1.0, 0.0, 0.0));
+	parentPosition.rotate(_rotation.y, glm::vec3(0.0, 1.0, 0.0));
+	parentPosition.rotate(_rotation.z, glm::vec3(0.0, 0.0, 1.0));
 
 
 	// That's our absolute position
@@ -507,11 +475,10 @@ void ModelNode::render(RenderPass pass) {
 	}
 }
 
-void ModelNode::interpolatePosition(float time, float &x, float &y, float &z) const {
+glm::vec3 ModelNode::interpolatePosition(float time) const {
 	// If less than 2 keyframes, don't interpolate, just return the only position
 	if (_positionFrames.size() < 2) {
-		getPosition(x, y, z);
-		return;
+		return getPosition();
 	}
 
 	uint32 lastFrame = 0;
@@ -525,25 +492,19 @@ void ModelNode::interpolatePosition(float time, float &x, float &y, float &z) co
 
 	const PositionKeyFrame &last = _positionFrames[lastFrame];
 	if (lastFrame + 1 >= _positionFrames.size() || last.time == time) {
-		x = last.x;
-		y = last.y;
-		z = last.z;
-		return;
+		return last.position;
 	}
 
 	const PositionKeyFrame &next = _positionFrames[lastFrame + 1];
 
 	const float f = (time - last.time) / (next.time - last.time);
-	x = f * next.x + (1.0f - f) * last.x;
-	y = f * next.y + (1.0f - f) * last.y;
-	z = f * next.z + (1.0f - f) * last.z;
+	return f * next.position + (1.0f - f) * last.position;
 }
 
-void ModelNode::interpolateOrientation(float time, float &x, float &y, float &z, float &a) const {
+glm::vec4 ModelNode::interpolateOrientation(float time) const {
 	// If less than 2 keyframes, don't interpolate just return the only orientation
 	if (_orientationFrames.size() < 2) {
-		getOrientation(x, y, z, a);
-		return;
+		return getOrientation();
 	}
 
 	uint32 lastFrame = 0;
@@ -555,23 +516,18 @@ void ModelNode::interpolateOrientation(float time, float &x, float &y, float &z,
 		lastFrame = i;
 	}
 
+	glm::vec4 orientation;
 	const QuaternionKeyFrame &last = _orientationFrames[lastFrame];
 	if (lastFrame + 1 >= _orientationFrames.size() || last.time == time) {
-		x = last.x;
-		y = last.y;
-		z = last.z;
-		a = Common::rad2deg(acos(last.q) * 2.0);
+		orientation = last.quaternion;
+	} else {
+		const QuaternionKeyFrame &next = _orientationFrames[lastFrame + 1];
+		const float f = (time - last.time) / (next.time - last.time);
+	  orientation = f * next.quaternion + (1.0f - f) * last.quaternion;
 	}
 
-	const QuaternionKeyFrame &next = _orientationFrames[lastFrame + 1];
-
-	const float f = (time - last.time) / (next.time - last.time);
-	x = f * next.x + (1.0f - f) * last.x;
-	y = f * next.y + (1.0f - f) * last.y;
-	z = f * next.z + (1.0f - f) * last.z;
-
-	const float q = f * next.q + (1.0f - f) * last.q;
-	a = Common::rad2deg(acos(q) * 2.0);
+	orientation.a = Common::rad2deg(acos(orientation.a) * 2.0);
+	return orientation;
 }
 
 } // End of namespace Aurora

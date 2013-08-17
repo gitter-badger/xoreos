@@ -426,7 +426,7 @@ void SoundManager::setListenerGain(float gain) {
 		alListenerf(AL_GAIN, gain);
 }
 
-void SoundManager::setChannelPosition(const ChannelHandle &handle, float x, float y, float z) {
+void SoundManager::setChannelPosition(const ChannelHandle &handle, const glm::vec3 &position) {
 	Common::StackLock lock(_mutex);
 
 	Channel *channel = getChannel(handle);
@@ -437,10 +437,10 @@ void SoundManager::setChannelPosition(const ChannelHandle &handle, float x, floa
 		throw Common::Exception("Cannot set position of a non-mono sound.");
 
 	if (_hasSound)
-		alSource3f(channel->source, AL_POSITION, x, y, z);
+		alSource3f(channel->source, AL_POSITION, position.x, position.y, position.z);
 }
 
-void SoundManager::getChannelPosition(const ChannelHandle &handle, float &x, float &y, float &z) {
+glm::vec3 SoundManager::getChannelPosition(const ChannelHandle &handle) {
 	Common::StackLock lock(_mutex);
 
 	Channel *channel = getChannel(handle);
@@ -450,8 +450,13 @@ void SoundManager::getChannelPosition(const ChannelHandle &handle, float &x, flo
 	if (channel->stream->getChannels() > 1)
 		throw Common::Exception("Cannot get position of a non-mono sound.");
 
-	if (_hasSound)
-		alGetSource3f(channel->source, AL_POSITION, &x, &y, &z);
+	if (!_hasSound)
+		return glm::vec3();
+
+	glm::vec3 position;
+	alGetSource3f(channel->source, AL_POSITION, &position.x, &position.y, &position.z);
+
+	return position;
 }
 
 void SoundManager::setChannelGain(const ChannelHandle &handle, float gain) {

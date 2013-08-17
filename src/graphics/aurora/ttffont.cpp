@@ -51,7 +51,7 @@ namespace Aurora {
 TTFFont::Page::Page() : needRebuild(false),
 		curX(0), curY(0), heightLeft(kPageHeight), widthLeft(kPageWidth) {
 
-	surface = new Surface(kPageWidth, kPageHeight);
+	surface = new Surface(glm::ivec2(kPageWidth, kPageHeight));
 	surface->fill(0x00, 0x00, 0x00, 0x00);
 
 	texture = TextureMan.add(new Texture(surface));
@@ -227,7 +227,7 @@ void TTFFont::addChar(uint32 c) {
 
 		}
 
-		_ttf->drawCharacter(c, *_pages.back()->surface, _pages.back()->curX, _pages.back()->curY);
+		_ttf->drawCharacter(c, *_pages.back()->surface, glm::ivec2(_pages.back()->curX, _pages.back()->curY));
 
 		std::pair<std::map<uint32, Char>::iterator, bool> result;
 

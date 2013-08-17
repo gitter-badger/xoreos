@@ -30,7 +30,6 @@
 #include "common/util.h"
 #include "common/ustring.h"
 #include "common/stream.h"
-#include "common/transmatrix.h"
 
 #include "graphics/graphics.h"
 
@@ -59,11 +58,12 @@ CubeSide::~CubeSide() {
 }
 
 void CubeSide::calculateDistance() {
-	Common::TransformationMatrix m;
+	glm::mat4 m;
 
 	_parent->applyTransformation(_n, m);
 
-	_distance = ABS(m.getX()) + ABS(m.getY()) + ABS(m.getZ());
+	const glm::vec4 v = glm::abs(m * glm::vec4(1.0, 1.0, 1.0, 1.0));
+	_distance = v.x + v.y + v.z;
 }
 
 void CubeSide::render(RenderPass pass) {
@@ -185,37 +185,37 @@ void Cube::applyTransformation(int n) {
 	}
 }
 
-void Cube::applyTransformation(int n, Common::TransformationMatrix &m) {
-	m.translate(0.0, 0.0, -3.0);
+void Cube::applyTransformation(int n, glm::mat4 &m) {
+	m = glm::translate(m, glm::vec3(0.0, 0.0, -3.0));
 
-	m.rotate(-_rotation, 1.0, 0.0, 0.0);
-	m.rotate( _rotation, 0.0, 1.0, 0.0);
-	m.rotate( _rotation, 0.0, 0.0, 1.0);
+	m = glm::rotate(m, -_rotation, glm::vec3(1.0, 0.0, 0.0));
+	m = glm::rotate(m,  _rotation, glm::vec3(0.0, 1.0, 0.0));
+	m = glm::rotate(m,  _rotation, glm::vec3(0.0, 0.0, 1.0));
 
-	m.scale(0.5, 0.5, 0.5);
+	m = glm::scale(m, glm::vec3(0.5, 0.5, 0.5));
 
 	switch (n) {
 		case 0:
-			m.translate(0.0, 0.0, 1.0);
+			m = glm::translate(m, glm::vec3(0.0, 0.0, 1.0));
 			break;
 		case 1:
-			m.translate(0.0, 0.0, -1.0);
+			m = glm::translate(m, glm::vec3(0.0, 0.0, -1.0));
 			break;
 		case 2:
-			m.rotate(90.0, 0.0, 1.0, 0.0);
-			m.translate(0.0, 0.0, 1.0);
+			m = glm::rotate(m, 90.0f, glm::vec3(0.0, 1.0, 0.0));
+			m = glm::translate(m, glm::vec3(0.0, 0.0, 1.0));
 			break;
 		case 3:
-			m.rotate(90.0, 0.0, 1.0, 0.0);
-			m.translate(0.0, 0.0, -1.0);
+			m = glm::rotate(m, 90.0f, glm::vec3(0.0, 1.0, 0.0));
+			m = glm::translate(m, glm::vec3(0.0, 0.0, -1.0));
 			break;
 		case 4:
-			m.rotate(90.0, 1.0, 0.0, 0.0);
-			m.translate(0.0, 0.0, 1.0);
+			m = glm::rotate(m, 90.0f, glm::vec3(1.0, 0.0, 0.0));
+			m = glm::translate(m, glm::vec3(0.0, 0.0, 1.0));
 			break;
 		case 5:
-			m.rotate(90.0, 1.0, 0.0, 0.0);
-			m.translate(0.0, 0.0, -1.0);
+			m = glm::rotate(m, 90.0f, glm::vec3(1.0, 0.0, 0.0));
+			m = glm::translate(m, glm::vec3(0.0, 0.0, -1.0));
 			break;
 	}
 }

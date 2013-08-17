@@ -610,18 +610,17 @@ void ScriptFunctions::getIsDead(Aurora::NWScript::FunctionContext &ctx) {
 }
 
 void ScriptFunctions::printVector(Aurora::NWScript::FunctionContext &ctx) {
-	float x, y, z;
-	ctx.getParams()[0].getVector(x, y, z);
+	const glm::vec3 vector = ctx.getParams()[0].getVector();
 
 	bool prepend = ctx.getParams()[1].getInt() != 0;
 
-	status("NWN: %s%f, %f, %f", prepend ? "PRINTVECTOR:" : "", x, y, z);
+	status("NWN: %s%f, %f, %f", prepend ? "PRINTVECTOR:" : "", vector.x, vector.y, vector.z);
 }
 
 void ScriptFunctions::vector(Aurora::NWScript::FunctionContext &ctx) {
-	ctx.getReturn().setVector(ctx.getParams()[0].getFloat(),
-	                          ctx.getParams()[1].getFloat(),
-	                          ctx.getParams()[2].getFloat());
+	ctx.getReturn() = glm::vec3(ctx.getParams()[0].getFloat(),
+                              ctx.getParams()[1].getFloat(),
+                              ctx.getParams()[2].getFloat());
 }
 
 void ScriptFunctions::setFacingPoint(Aurora::NWScript::FunctionContext &ctx) {
@@ -629,10 +628,9 @@ void ScriptFunctions::setFacingPoint(Aurora::NWScript::FunctionContext &ctx) {
 	if (!object)
 		return;
 
-	float x, y, z;
-	ctx.getParams()[0].getVector(x, y, z);
+	const glm::vec3 vector = ctx.getParams()[0].getVector();
 
-	warning("TODO: SetFacingPoint: \"%s\" to %f, %f, %f", object->getTag().c_str(), x, y, z);
+	warning("TODO: SetFacingPoint: \"%s\" to %f, %f, %f", object->getTag().c_str(), vector.x, vector.y, vector.z);
 }
 
 void ScriptFunctions::angleToVector(Aurora::NWScript::FunctionContext &ctx) {
@@ -884,10 +882,9 @@ void ScriptFunctions::actionJumpToObject(Aurora::NWScript::FunctionContext &ctx)
 	if (!object || !moveTo)
 		return;
 
-	float x, y, z;
-	moveTo->getPosition(x, y, z);
+	const glm::vec3 position = moveTo->getPosition();
 
-	jumpTo(object, moveTo->getArea(), x, y, z);
+	jumpTo(object, moveTo->getArea(), position);
 }
 
 void ScriptFunctions::getWaypointByTag(Aurora::NWScript::FunctionContext &ctx) {

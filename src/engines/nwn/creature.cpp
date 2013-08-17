@@ -158,20 +158,20 @@ void Creature::hide() {
 		_model->hide();
 }
 
-void Creature::setPosition(float x, float y, float z) {
-	Object::setPosition(x, y, z);
-	Object::getPosition(x, y, z);
+void Creature::setPosition(const glm::vec3 &position) {
+	Object::setPosition(position);
+	const glm::vec3 p = Object::getPosition();
 
 	if (_model)
-		_model->setPosition(x, y, z);
+		_model->setPosition(p);
 }
 
-void Creature::setOrientation(float x, float y, float z) {
-	Object::setOrientation(x, y, z);
-	Object::getOrientation(x, y, z);
+void Creature::setOrientation(const glm::vec3 &orientation) {
+	Object::setOrientation(orientation);
+	const glm::vec3 rotation = Object::getOrientation();
 
 	if (_model)
-		_model->setRotation(x, z, -y);
+		_model->setRotation(glm::vec3(rotation.x, rotation.z, -rotation.y));
 }
 
 uint32 Creature::lastChangedGUIDisplay() const {
@@ -473,13 +473,11 @@ void Creature::loadModel() {
 
 	// Positioning
 
-	float x, y, z;
+	const glm::vec3 position = getPosition();
+	setPosition(position);
 
-	getPosition(x, y, z);
-	setPosition(x, y, z);
-
-	getOrientation(x, y, z);
-	setOrientation(x, y, z);
+	const glm::vec3 orientation = getOrientation();
+	setOrientation(orientation);
 
 	// Clickable
 
@@ -547,19 +545,18 @@ void Creature::load(const Aurora::GFFStruct &instance, const Aurora::GFFStruct *
 
 	// Position
 
-	setPosition(instance.getDouble("XPosition"),
-	            instance.getDouble("YPosition"),
-	            instance.getDouble("ZPosition"));
+	setPosition(glm::vec3(instance.getDouble("XPosition"),
+	                      instance.getDouble("YPosition"),
+	                      instance.getDouble("ZPosition")));
 
 	// Orientation
 
-	float bearingX = instance.getDouble("XOrientation");
-	float bearingY = instance.getDouble("YOrientation");
+	const glm::vec2 bearing = glm::vec2(instance.getDouble("XOrientation"),
+	                                    instance.getDouble("YOrientation"));
 
-	float o[3];
-	Common::vector2orientation(bearingX, bearingY, o[0], o[1], o[2]);
+	const glm::vec3 o = Common::vector2orientation(bearing);
 
-	setOrientation(o[0], o[1], o[2]);
+	setOrientation(o);
 }
 
 static const char *kBodyPartFields[] = {

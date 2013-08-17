@@ -367,7 +367,7 @@ void Area::loadModels() {
 			                        lytRoom.model.c_str(), _resRef.c_str());
 		}
 
-		room->model->setPosition(lytRoom.x, lytRoom.y, lytRoom.z);
+		room->model->setPosition(lytRoom.position);
 
 		_rooms.push_back(room);
 	}
@@ -432,8 +432,8 @@ void Area::processEventQueue() {
 		checkActive();
 }
 
-Object *Area::getObjectAt(int x, int y) {
-	const Graphics::Renderable *obj = GfxMan.getObjectAt(x, y);
+Object *Area::getObjectAt(const glm::ivec2 &point) {
+	const Graphics::Renderable *obj = GfxMan.getObjectAt(glm::vec2(point));
 	if (!obj)
 		return 0;
 
@@ -463,10 +463,9 @@ void Area::checkActive() {
 
 	Common::StackLock lock(_mutex);
 
-	int x, y;
-	CursorMan.getPosition(x, y);
+	const glm::ivec2 cursor = CursorMan.getPosition();
 
-	setActive(getObjectAt(x, y));
+	setActive(getObjectAt(cursor));
 }
 
 void Area::highlightAll(bool enabled) {

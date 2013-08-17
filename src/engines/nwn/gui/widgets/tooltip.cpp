@@ -54,8 +54,8 @@ namespace NWN {
 Tooltip::Tooltip(Type type) : _type(type),
 	_parentWidget(0), _parentModel(0),
 	_empty(true), _visible(false), _align(0.0),
-	_bubble(0), _portrait(0), _offscreen(false), _x(0.0), _y(0.0), _z(0.0),
-	_lineHeight(0.0), _lineSpacing(0.0), _width(0.0), _height(0.0),
+	_bubble(0), _portrait(0), _offscreen(false), _position(0.0, 0.0, 0.0),
+	_lineHeight(0.0), _lineSpacing(0.0), _size(0.0, 0.0),
 	_needCamera(false), _detectEdge(false) {
 
 	getFeedbackMode(_showBubble, _showText, _showPortrait);
@@ -64,8 +64,8 @@ Tooltip::Tooltip(Type type) : _type(type),
 Tooltip::Tooltip(Type type, Widget &parent) : _type(type),
 	_parentWidget(&parent), _parentModel(0),
 	_empty(true), _visible(false), _align(0.0),
-	_bubble(0), _portrait(0), _offscreen(false), _x(0.0), _y(0.0), _z(0.0),
-	_lineHeight(0.0), _lineSpacing(0.0), _width(0.0), _height(0.0),
+	_bubble(0), _portrait(0), _offscreen(false), _position(0.0, 0.0, 0.0),
+	_lineHeight(0.0), _lineSpacing(0.0), _size(0.0, 0.0),
 	_needCamera(false), _detectEdge(true) {
 
 	getFeedbackMode(_showBubble, _showText, _showPortrait);
@@ -74,8 +74,8 @@ Tooltip::Tooltip(Type type, Widget &parent) : _type(type),
 Tooltip::Tooltip(Type type, Graphics::Aurora::Model &parent) : _type(type),
 	_parentWidget(0), _parentModel(&parent),
 	_empty(true), _visible(false), _align(0.0),
-	_bubble(0), _portrait(0), _offscreen(false), _x(0.0), _y(0.0), _z(0.0),
-	_lineHeight(0.0), _lineSpacing(0.0), _width(0.0), _height(0.0),
+	_bubble(0), _portrait(0), _offscreen(false), _position(0.0, 0.0, 0.0),
+	_lineHeight(0.0), _lineSpacing(0.0), _size(0.0, 0.0),
 	_needCamera(true), _detectEdge(false) {
 
 	getFeedbackMode(_showBubble, _showText, _showPortrait);
@@ -156,24 +156,22 @@ void Tooltip::notifyCameraMoved() {
 	updatePosition();
 }
 
-bool Tooltip::getParentPosition(float &x, float &y, float &z) const {
-	x = y = z = 0.0;
+bool Tooltip::getParentPosition(glm::vec3 &position) const {
+	position = glm::vec3();
 
 	bool onscreen = true;
 
 	if (_parentWidget)
-		_parentWidget->getPosition(x, y, z);
+		position = _parentWidget->getPosition();
 
 	if (_parentModel) {
-		float aX, aY, aZ;
-
-		_parentModel->getTooltipAnchor(aX, aY, aZ);
-		if (!GfxMan.project(aX, aY, aZ, x, y, z))
+		glm::vec3 a = _parentModel->getTooltipAnchor();
+		if (!GfxMan.project(a, position))
 			return false;
 
-		onscreen = ((z >= 0.0) && (z <= 1.0));
+		onscreen = ((position.z >= 0.0) && (position.z <= 1.0));
 
-		z = 0.0;
+		position.z = 0.0;
 	}
 
 	return onscreen;
@@ -185,8 +183,8 @@ void Tooltip::updatePosition() {
 
 	Common::StackLock lock(_mutex);
 
-	float pX, pY, pZ;
-	if (!getParentPosition(pX, pY, pZ)) {
+	glm::vec3 ppos;
+	if (!getParentPosition(ppos)) {
 		_offscreen = true;
 		doHide();
 		return;
@@ -199,74 +197,69 @@ void Tooltip::updatePosition() {
 
 	const bool hasBubble = _showBubble && _bubble;
 
-	const float bubbleWidth  = hasBubble ? (_bubble->getWidth () - 30.0) : _width;
-	const float bubbleHeight = hasBubble ? (_bubble->getHeight() -  8.0) : _height;
+	const glm::vec2 bubbleSize = hasBubble ? (glm::vec2(_bubble->getSize()) - glm::vec2(30.0, 8.0)) : _size;
 
-	const float bubbleWantX = pX + _x - (bubbleWidth / 2.0);
-	const float bubbleRight = bubbleWantX + bubbleWidth + 15.0f;
+	const float bubbleWantX = ppos.x + _position.x - (bubbleSize.x / 2.0);
+	const float bubbleRight = bubbleWantX + bubbleSize.x + 15.0f;
 
-	const float maxX  = _detectEdge ? GfxMan.getScreenWidth() / 2.0 : 0.0;
+	const float maxX  = _detectEdge ? GfxMan.getScreenSize().x / 2.0 : 0.0;
 	const float overX = _detectEdge ? MAX(0.0f, bubbleRight - maxX) : 0.0;
 
-	const float bubbleX = bubbleWantX - overX;
-	const float bubbleY = pY + _y;
-	const float bubbleZ = pZ + _z;
+	const glm::vec3 bubble = glm::vec3(bubbleWantX - overX, ppos.y + _position.y, ppos.z + _position.z);
 
 	if (hasBubble)
-		_bubble->setPosition(floorf(bubbleX), floorf(bubbleY), floorf(bubbleZ));
+		_bubble->setPosition(glm::floor(bubble));
 
 
 	// Set portrait position
 
 	const bool hasPortrait = _showPortrait && _portrait;
 
-	const float portraitWidth  = hasPortrait ? _portrait->getWidth () : 0.0;
-	const float portraitHeight = hasPortrait ? _portrait->getHeight() : 0.0;
+	const glm::vec2 portraitSize = hasPortrait ? _portrait->getSize() : glm::vec2(0.0, 0.0);
 
-	const float portraitBorderY = (bubbleHeight - portraitHeight) / 2.0;
+	const float portraitBorderY = (bubbleSize.y - portraitSize.y) / 2.0;
 
-	const float portraitX = bubbleX + 5.0;
-	const float portraitY = bubbleY - bubbleHeight + portraitBorderY + 1.0;
-	const float portraitZ = bubbleZ - 1.0;
+	const glm::vec3 portrait = glm::vec3(bubble.x + 5.0,
+		                                   bubble.y - bubbleSize.y + portraitBorderY + 1.0,
+		                                   bubble.z - 1.0);
 
 	if (hasPortrait)
-		_portrait->setPosition(floorf(portraitX), floorf(portraitY), floorf(portraitZ));
+		_portrait->setPosition(glm::floor(portrait));
 
 
 	// Set text position
 
-	const float portraitSpacerWidth = portraitWidth + (_portrait ? 10.0 : 0.0);
+	const float portraitSpacerWidth = portraitSize.x + (_portrait ? 10.0 : 0.0);
 
-	const float bubbleTextWidth = bubbleWidth - portraitSpacerWidth;
+	const float bubbleTextWidth = bubbleSize.x - portraitSpacerWidth;
 
 	const float textHeight = _lines.size() * _lineHeight + (_lines.size() - 1) * _lineSpacing;
 
-	const float textBorderY = (bubbleHeight - textHeight) / 2.0;
+	const float textBorderY = (bubbleSize.y - textHeight) / 2.0;
 
-	const float textBottomX = bubbleX + portraitSpacerWidth;
-	const float textBottomY = bubbleY - textBorderY + 1.0;
-	const float textBottomZ = bubbleZ - 1.0;
+	const glm::vec3 textBottom = glm::vec3(bubble.x + portraitSpacerWidth,
+	                                       bubble.y - textBorderY + 1.0,
+	                                       bubble.z - 1.0);
 
-	float textY = textBottomY;
+	float textY = textBottom.y;
 	for (std::vector<Line>::reverse_iterator l = _lines.rbegin(); l != _lines.rend(); ++l) {
 		if (l->text) {
-			const float textWidth   = l->text->getWidth();
+			const glm::vec2 textSize = l->text->getSize(); 
+			const float textWidth   = textSize.x;
 			const float textBorderX = (bubbleTextWidth - textWidth) * _align;
-			const float textX       = textBottomX + textBorderX;
-			const float lineY       = textY - l->text->getHeight();
-			l->text->setPosition(floorf(textX), floorf(lineY), floorf(textBottomZ));
+			const float textX       = textBottom.x + textBorderX;
+			const float lineY       = textY - textSize.y;
+			l->text->setPosition(glm::floor(glm::vec3(textX, lineY, textBottom.z)));
 		}
 
 		textY -= (_lineHeight + _lineSpacing);
 	}
 }
 
-void Tooltip::setPosition(float x, float y, float z) {
+void Tooltip::setPosition(const glm::vec3 &position) {
 	hide();
 
-	_x = x;
-	_y = y;
-	_z = z;
+	_position = position;
 
 	updatePosition();
 }
@@ -294,21 +287,22 @@ void Tooltip::hide() {
 	doHide();
 }
 
-void Tooltip::getSize(float &width, float &height) {
-	width = 0.0;
+glm::vec2 Tooltip::getSize() {
+	glm::vec2 size = glm::vec2(0.0, 0.0);
 	for (std::vector<Line>::const_iterator l = _lines.begin(); l != _lines.end(); ++l)
 		if (l->text)
-			width = MAX(width, l->text->getWidth());
+			size.x = MAX(size.x, l->text->getSize().x);
 
 	if (_portrait)
-		width += _portrait->getWidth() + 10.0;
+		size.x += _portrait->getSize().x + 10.0;
 
-	height = 0.0;
 	if (_lines.size() > 0)
-		height = (_lines.size() * _lineHeight) + ((_lines.size() - 1) * _lineSpacing);
+		size.y = (_lines.size() * _lineHeight) + ((_lines.size() - 1) * _lineSpacing);
 
 	if (_portrait)
-		height = MAX(height, _portrait->getHeight());
+		size.y = MAX(size.y, _portrait->getSize().y);
+
+	return size;
 }
 
 void Tooltip::checkEmpty() {
@@ -334,8 +328,7 @@ void Tooltip::redoLines() {
 		_lineHeight  = font.getFont().getHeight();
 		_lineSpacing = font.getFont().getLineSpacing();
 
-		_width  = 0.0;
-		_height = 0.0;
+		_size = glm::vec2(0.0, 0.0);
 	}
 
 	bool showBubble, showText, showPortrait;
@@ -347,8 +340,7 @@ void Tooltip::redoLines() {
 
 		needRedo = true;
 
-		_width  = 0.0;
-		_height = 0.0;
+		_size = glm::vec2(0.0, 0.0);
 
 		_showBubble   = showBubble;
 		_showText     = showText;
@@ -363,10 +355,10 @@ void Tooltip::redoBubble() {
 	delete _bubble;
 	_bubble = 0;
 
-	if (!_showBubble || (_height <= 0.0))
+	if (!_showBubble || (_size.y <= 0.0))
 		return;
 
-	float  height = _height - _lineHeight;
+	float  height = _size.y - _lineHeight;
 	uint32 lines  = 1;
 
 	while (height > _lineSpacing) {
@@ -374,7 +366,7 @@ void Tooltip::redoBubble() {
 		lines++;
 	}
 
-	Common::UString bubbleModel = getBubbleModel(lines, _width);
+	Common::UString bubbleModel = getBubbleModel(lines, _size.x);
 
 	_bubble = loadModelGUI(bubbleModel);
 	if (!_bubble) {
@@ -406,12 +398,9 @@ void Tooltip::redoLayout() {
 		l->text->setTag("Tooltip#Text");
 	}
 
-	float width, height;
-	getSize(width, height);
-
-	if ((_width != width) || (_height != height)) {
-		_width  = width;
-		_height = height;
+	const glm::vec2 size = getSize();
+	if (_size != size) {
+		_size = size;
 
 		redoBubble();
 	}

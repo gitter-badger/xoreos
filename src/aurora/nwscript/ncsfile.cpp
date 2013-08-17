@@ -498,17 +498,9 @@ void NCSFile::callEngine(Aurora::NWScript::FunctionContext &ctx,
 			case kTypeString:
 			case kTypeObject:
 			case kTypeEngineType:
+			case kTypeVector:
 				param = _stack.pop();
 				break;
-
-			case kTypeVector: {
-				float z = _stack.pop().getFloat();
-				float y = _stack.pop().getFloat();
-				float x = _stack.pop().getFloat();
-
-				param.setVector(x, y, z);
-				break;
-			}
 
 			case kTypeScriptState:
 				param.getScriptState() = _storedState.getScriptState();
@@ -537,18 +529,9 @@ void NCSFile::callEngine(Aurora::NWScript::FunctionContext &ctx,
 		case kTypeString:
 		case kTypeObject:
 		case kTypeEngineType:
+		case kTypeVector:
 			_stack.push(retVal);
 			break;
-
-		case kTypeVector: {
-			float x, y, z;
-			retVal.getVector(x, y, z);
-
-			_stack.push(x);
-			_stack.push(y);
-			_stack.push(z);
-			break;
-		}
 
 		default:
 			throw Common::Exception("NCSFile::callEngine(): Invalid return type %d",

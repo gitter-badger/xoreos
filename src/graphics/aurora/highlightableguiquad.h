@@ -37,8 +37,9 @@ class HighlightableGUIQuad: public GUIQuad, public Highlightable {
 
 public:
 	HighlightableGUIQuad(const Common::UString &texture,
-	        float  x1      , float  y1      , float  x2      , float  y2,
-	        float tX1 = 0.0, float tY1 = 0.0, float tX2 = 1.0, float tY2 = 1.0);
+          const glm::vec2 &p1, const glm::vec2 &p2,
+          const glm::vec2 &t1 = glm::vec2(0.0, 0.0),
+          const glm::vec2 &t2 = glm::vec2(1.0, 1.0));
 	~HighlightableGUIQuad();
 
 	void render (RenderPass pass);

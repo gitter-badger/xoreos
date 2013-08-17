@@ -82,7 +82,7 @@ private:
 
 	void updatePortraitTooltip();
 
-	void notifyResized(int oldWidth, int oldHeight, int newWidth, int newHeight);
+	void notifyResized(const glm::ivec2 &oldSize, const glm::ivec2 &newSize);
 };
 
 } // End of namespace NWN

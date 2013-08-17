@@ -51,18 +51,10 @@ protected:
 	void callbackActive(Widget &widget);
 
 private:
-	struct Resolution {
-		int width;
-		int height;
+	std::vector<glm::ivec2> _resolutions;
+	std::vector<glm::ivec2> _useableResolutions;
 
-		Resolution(int w, int h);
-	};
-
-	std::vector<Resolution> _resolutions;
-	std::vector<Resolution> _useableResolutions;
-
-	int _width;
-	int _height;
+	glm::ivec2 _size;
 
 	void initResolutions();
 	void initResolutionsBox(WidgetListBox &resList);

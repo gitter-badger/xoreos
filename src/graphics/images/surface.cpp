@@ -33,8 +33,8 @@
 
 namespace Graphics {
 
-Surface::Surface(int width, int height) {
-	assert((width > 0) && (height > 0));
+Surface::Surface(const glm::ivec2 &size) {
+	assert((size.x > 0) && (size.y > 0));
 
 	_compressed = false;
 	_hasAlpha   = true;
@@ -44,20 +44,15 @@ Surface::Surface(int width, int height) {
 
 	_mipMaps.push_back(new MipMap);
 
-	_mipMaps[0]->width  = width;
-	_mipMaps[0]->height = height;
-	_mipMaps[0]->data.resize(_mipMaps[0]->width * _mipMaps[0]->height * 4);
+	_mipMaps[0]->size = size;
+	_mipMaps[0]->data.resize(_mipMaps[0]->size.x * _mipMaps[0]->size.y * 4);
 }
 
 Surface::~Surface() {
 }
 
-int Surface::getWidth() const {
-	return _mipMaps[0]->width;
-}
-
-int Surface::getHeight() const {
-	return _mipMaps[0]->height;
+glm::ivec2 Surface::getSize() const {
+	return glm::ivec2(_mipMaps[0]->size);
 }
 
 byte *Surface::getData() {

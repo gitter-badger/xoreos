@@ -79,4 +79,14 @@
 typedef uint8 byte;
 typedef unsigned int uint;
 
+// std::pair
+#include <utility>
+
+// GLSL-style vector and matrix types
+#define GLM_SWIZZLE
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_access.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #endif // COMMON_TYPES_H

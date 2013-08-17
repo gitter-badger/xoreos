@@ -38,7 +38,7 @@ namespace Engines {
 
 namespace NWN {
 
-Scrollbar::Scrollbar(Type type) : _type(type), _x(0.0), _y(0.0), _z(0.0) {
+Scrollbar::Scrollbar(Type type) : _type(type), _position(0.0, 0.0, 0.0) {
 	_texture = TextureMan.get("gui_scrollbar");
 
 	setLength(16.0);
@@ -48,31 +48,22 @@ Scrollbar::~Scrollbar() {
 	hide();
 }
 
-void Scrollbar::setPosition(float x, float y, float z) {
+void Scrollbar::setPosition(const glm::vec3 &position) {
 	GfxMan.lockFrame();
 
-	_x = x;
-	_y = y;
-	_z = z;
+	_position = position;
 
 	calculateDistance();
 
 	GfxMan.unlockFrame();
 }
 
-void Scrollbar::getPosition(float &x, float &y, float &z) const {
-	x = _x;
-	y = _y;
-	z = _z;
+glm::vec3 Scrollbar::getPosition() const {
+	return _position;
 }
 
-bool Scrollbar::isIn(float x, float y) const {
-	if ((x < _x) || (y < _y))
-		return false;
-	if ((x > (_x + getWidth())) || (y > (_y + getHeight())))
-		return false;
-
-	return true;
+bool Scrollbar::isIn(const glm::vec2 &point) const {
+	return Common::insideOf(point, _position.xy(), _position.xy() + getSize());
 }
 
 void Scrollbar::setLength(float length) {
@@ -89,26 +80,17 @@ void Scrollbar::setLength(float length) {
 	GfxMan.unlockFrame();
 }
 
-float Scrollbar::getWidth() const {
+glm::vec2 Scrollbar::getSize() const {
 	if      (_type == kTypeVertical)
-		return 10.0;
+		return glm::vec2(10.0, _length);
 	else if (_type == kTypeHorizontal)
-		return _length;
+		return glm::vec2(_length, 10.0);
 
-	return 0.0;
-}
-
-float Scrollbar::getHeight() const {
-	if      (_type == kTypeVertical)
-		return _length;
-	else if (_type == kTypeHorizontal)
-		return 10.0;
-
-	return 0.0;
+	return glm::vec2(0.0, 0.0);
 }
 
 void Scrollbar::calculateDistance() {
-	_distance = _z;
+	_distance = _position.z;
 }
 
 void Scrollbar::render(Graphics::RenderPass pass) {
@@ -118,7 +100,8 @@ void Scrollbar::render(Graphics::RenderPass pass) {
 
 	TextureMan.set(_texture);
 
-	glTranslatef(roundf(_x), roundf(_y), _z);
+	const glm::vec3 p = glm::vec3(glm::round(glm::vec2(_position)), _position.z);
+	glTranslatef(p.x, p.y, p.z);
 
 	glBegin(GL_QUADS);
 	for (std::vector<Quad>::const_iterator q = _quads.begin(); q != _quads.end(); ++q) {
@@ -274,8 +257,8 @@ void WidgetScrollbar::hide() {
 	NWNWidget::hide();
 }
 
-void WidgetScrollbar::setPosition(float x, float y, float z) {
-	NWNWidget::setPosition(x, y, z);
+void WidgetScrollbar::setPosition(const glm::vec3 &position) {
+	NWNWidget::setPosition(position);
 
 	setState(_state);
 }
@@ -306,38 +289,32 @@ void WidgetScrollbar::setState(float state) {
 	float span = _range - _length; // Space to scroll in
 	float pos  = _state * span;    // Offset within that space
 
-	float x, y, z;
-	getPosition(x, y, z);
+	glm::vec3 position = getPosition();
 
 	if      (_type == Scrollbar::kTypeVertical)
-		y += span - pos;
+		position.y += span - pos;
 	else if (_type == Scrollbar::kTypeHorizontal)
-		x += pos;
+		position.x += pos;
 
-	_scrollbar.setPosition(x, y, z);
+	_scrollbar.setPosition(position);
 }
 
-float WidgetScrollbar::getWidth() const {
-	return _scrollbar.getWidth();
-}
-
-float WidgetScrollbar::getHeight() const {
-	return _scrollbar.getHeight();
+glm::vec2 WidgetScrollbar::getSize() const {
+	return _scrollbar.getSize();
 }
 
 float WidgetScrollbar::getBarPosition() const {
-	float x, y, z;
-	_scrollbar.getPosition(x, y, z);
+	const glm::vec3 position = _scrollbar.getPosition();
 
 	if      (_type == Scrollbar::kTypeVertical)
-		return y;
+		return position.y;
 	else if (_type == Scrollbar::kTypeHorizontal)
-		return x;
+		return position.x;
 
 	return 0.0;
 }
 
-void WidgetScrollbar::mouseDown(uint8 state, float x, float y) {
+void WidgetScrollbar::mouseDown(uint8 state, const glm::vec2 &point) {
 	if (isDisabled())
 		return;
 
@@ -348,16 +325,16 @@ void WidgetScrollbar::mouseDown(uint8 state, float x, float y) {
 	// We only care about the left mouse button, pass everything else to the owner
 	if (state != SDL_BUTTON_LMASK) {
 		if (_owner)
-			_owner->mouseDown(state, x, y);
+			_owner->mouseDown(state, point);
 		return;
 	}
 
-	_dragX     = x;
-	_dragY     = y;
+	_dragX     = point.x;
+	_dragY     = point.y;
 	_dragState = _state;
 }
 
-void WidgetScrollbar::mouseMove(uint8 state, float x, float y) {
+void WidgetScrollbar::mouseMove(uint8 state, const glm::vec2 &point) {
 	if (isDisabled())
 		return;
 
@@ -372,9 +349,9 @@ void WidgetScrollbar::mouseMove(uint8 state, float x, float y) {
 	float steps = 1.0 / (_range - _length);
 
 	if      (_type == Scrollbar::kTypeVertical)
-		setState(_dragState + ((_dragY - y) * steps));
+		setState(_dragState + ((_dragY - point.y) * steps));
 	else if (_type == Scrollbar::kTypeHorizontal)
-		setState(_dragState + ((x - _dragX) * steps));
+		setState(_dragState + ((point.x - _dragX) * steps));
 
 	setActive(true);
 }

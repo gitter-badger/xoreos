@@ -61,11 +61,11 @@ public:
 
 	const std::list<uint32> &getIDs() const;
 
-	virtual void getPosition(float &x, float &y, float &z) const;
-	virtual void getOrientation(float &x, float &y, float &z) const;
+	virtual glm::vec3 getPosition() const;
+	virtual glm::vec3 getOrientation() const;
 
-	virtual void setPosition(float x, float y, float z);
-	virtual void setOrientation(float x, float y, float z);
+	virtual void setPosition(const glm::vec3 &position);
+	virtual void setOrientation(const glm::vec3 &orientation);
 
 	virtual void enter() = 0;
 	virtual void leave() = 0;
@@ -86,8 +86,8 @@ protected:
 
 	std::list<uint32> _ids;
 
-	float _position[3];
-	float _orientation[3];
+	glm::vec3 _position;
+	glm::vec3 _orientation;
 };
 
 } // End of namespace KotOR

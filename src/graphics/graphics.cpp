@@ -37,7 +37,6 @@
 #include "common/file.h"
 #include "common/configman.h"
 #include "common/threads.h"
-#include "common/transmatrix.h"
 
 #include "events/requests.h"
 #include "events/events.h"
@@ -61,7 +60,7 @@ namespace Graphics {
 
 PFNGLCOMPRESSEDTEXIMAGE2DPROC glCompressedTexImage2D;
 
-GraphicsManager::GraphicsManager() : _projection(4, 4), _projectionInv(4, 4) {
+GraphicsManager::GraphicsManager() : _projection(), _projectionInv() {
 	_ready = false;
 
 	_needManualDeS3TC        = false;
@@ -120,11 +119,12 @@ void GraphicsManager::init() {
 	// Set the window title to our name
 	setWindowTitle(XOREOS_NAMEVERSION);
 
-	int  width  = ConfigMan.getInt ("width"     , 800);
-	int  height = ConfigMan.getInt ("height"    , 600);
-	bool fs     = ConfigMan.getBool("fullscreen", false);
+	glm::ivec2 size;
+	size.x  = ConfigMan.getInt ("width"     , 800);
+	size.y  = ConfigMan.getInt ("height"    , 600);
+	bool fs = ConfigMan.getBool("fullscreen", false);
 
-	initSize(width, height, fs);
+	initSize(size, fs);
 	setupScene();
 
 	// Try to change the FSAA settings to the config value
@@ -180,13 +180,13 @@ uint32 GraphicsManager::getFPS() const {
 	return _fpsCounter->getFPS();
 }
 
-void GraphicsManager::initSize(int width, int height, bool fullscreen) {
+void GraphicsManager::initSize(const glm::ivec2 &size, bool fullscreen) {
 	int bpp = SDL_GetVideoInfo()->vfmt->BitsPerPixel;
 	if ((bpp != 16) && (bpp != 24) && (bpp != 32))
 		throw Common::Exception("Need 16, 24 or 32 bits per pixel");
 
-	_systemWidth  = SDL_GetVideoInfo()->current_w;
-	_systemHeight = SDL_GetVideoInfo()->current_h;
+	_systemSize.x = SDL_GetVideoInfo()->current_w;
+	_systemSize.y = SDL_GetVideoInfo()->current_h;
 
 	uint32 flags = SDL_OPENGL;
 
@@ -205,7 +205,7 @@ void GraphicsManager::initSize(int width, int height, bool fullscreen) {
 
 	bool foundMode = false;
 	for (int i = 0; i < ARRAYSIZE(colorModes); i++) {
-		if (setupSDLGL(width, height, colorModes[i], flags)) {
+		if (setupSDLGL(size, colorModes[i], flags)) {
 			foundMode = true;
 			break;
 		}
@@ -274,7 +274,7 @@ bool GraphicsManager::setFSAA(int level) {
 	return _fsaa == level;
 }
 
-int GraphicsManager::probeFSAA(int width, int height, int bpp, uint32 flags) {
+int GraphicsManager::probeFSAA(const glm::ivec2 &size, int bpp, uint32 flags) {
 	// Find the max supported FSAA level
 
 	for (int i = 32; i >= 2; i >>= 1) {
@@ -287,15 +287,15 @@ int GraphicsManager::probeFSAA(int width, int height, int bpp, uint32 flags) {
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, i);
 
-		if (SDL_SetVideoMode(width, height, bpp, flags))
+		if (SDL_SetVideoMode(size.x, size.y, bpp, flags))
 			return i;
 	}
 
 	return 0;
 }
 
-bool GraphicsManager::setupSDLGL(int width, int height, int bpp, uint32 flags) {
-	_fsaaMax = probeFSAA(width, height, bpp, flags);
+bool GraphicsManager::setupSDLGL(const glm::ivec2 &size, int bpp, uint32 flags) {
+	_fsaaMax = probeFSAA(size, bpp, flags);
 
 	SDL_GL_SetAttribute(SDL_GL_RED_SIZE    ,   8);
 	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE  ,   8);
@@ -306,7 +306,7 @@ bool GraphicsManager::setupSDLGL(int width, int height, int bpp, uint32 flags) {
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 0);
 
-	_screen = SDL_SetVideoMode(width, height, bpp, flags);
+	_screen = SDL_SetVideoMode(size.x, size.y, bpp, flags);
 	if (!_screen)
 		return false;
 
@@ -372,10 +372,12 @@ void GraphicsManager::setupScene() {
 	if (!_screen)
 		throw Common::Exception("No screen initialized");
 
+	const glm::ivec2 screenSize = getScreenSize();
+
 	glClearColor(0, 0, 0, 0);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glViewport(0, 0, _screen->w, _screen->h);
+	glViewport(0, 0, screenSize.x, screenSize.y);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -396,7 +398,7 @@ void GraphicsManager::setupScene() {
 
 	glEnable(GL_CULL_FACE);
 
-	perspective(60.0, ((float) _screen->w) / ((float) _screen->h), 1.0, 1000.0);
+	perspective(60.0, ((float) screenSize.x) / ((float) screenSize.y), 1.0, 1000.0);
 }
 
 void GraphicsManager::perspective(float fovy, float aspect, float zNear, float zFar) {
@@ -405,121 +407,86 @@ void GraphicsManager::perspective(float fovy, float aspect, float zNear, float z
 	const float t1 = (zFar + zNear) / (zNear - zFar);
 	const float t2 = (2 * zFar * zNear) / (zNear - zFar);
 
-	_projection(0, 0) =  f / aspect;
-	_projection(0, 1) =  0.0;
-	_projection(0, 2) =  0.0;
-	_projection(0, 3) =  0.0;
+	glm::column(_projection, 0) = glm::vec4(f / aspect, 0.0f, 0.0f,  0.0f);
+	glm::column(_projection, 1) = glm::vec4(0.0f,          f, 0.0f,  0.0f);
+	glm::column(_projection, 2) = glm::vec4(0.0f,       0.0f,   t1, -1.0f);
+	glm::column(_projection, 3) = glm::vec4(0.0f,       0.0f,   t2,  0.0f);
 
-	_projection(1, 0) =  0.0;
-	_projection(1, 1) =  f;
-	_projection(1, 2) =  0.0;
-	_projection(1, 3) =  0.0;
-
-	_projection(2, 0) =  0.0;
-	_projection(2, 1) =  0.0;
-	_projection(2, 2) =  t1;
-	_projection(2, 3) =  t2;
-
-	_projection(3, 0) =  0.0;
-	_projection(3, 1) =  0.0;
-	_projection(3, 2) = -1.0;
-	_projection(3, 3) =  0.0;
-
-	_projectionInv = _projection.getInverse();
+	_projectionInv = glm::inverse(_projection);
 }
 
-bool GraphicsManager::project(float x, float y, float z, float &sX, float &sY, float &sZ) {
+bool GraphicsManager::project(const glm::vec3 &world, glm::vec3 &screen) {
 	// This is our projection matrix
-	Common::Matrix proj = _projection;
+	glm::mat4 proj = _projection;
 
 
 	// Generate the model matrix
-
-	Common::TransformationMatrix model;
-
-	float cPos[3];
-	float cOrient[3];
+	glm::mat4 model = glm::mat4();
 
 	CameraMan.lock();
-	memcpy(cPos   , CameraMan.getPosition   (), 3 * sizeof(float));
-	memcpy(cOrient, CameraMan.getOrientation(), 3 * sizeof(float));
+	glm::vec3 cPos    = -CameraMan.getPosition();
+	glm::vec3 cOrient = -CameraMan.getOrientation();
 	CameraMan.unlock();
 
+	cOrient.y = -cOrient.y;
+	cPos.z    = -cPos.z;
+
 	// Apply camera orientation
-	model.rotate(-cOrient[0], 1.0, 0.0, 0.0);
-	model.rotate( cOrient[1], 0.0, 1.0, 0.0);
-	model.rotate(-cOrient[2], 0.0, 0.0, 1.0);
+	model = glm::rotate(model, cOrient.x, glm::vec3(1.0, 0.0, 0.0));
+	model = glm::rotate(model, cOrient.y, glm::vec3(0.0, 1.0, 0.0));
+	model = glm::rotate(model, cOrient.z, glm::vec3(0.0, 0.0, 1.0));
 
 	// Apply camera position
-	model.translate(-cPos[0], -cPos[1], cPos[2]);
+	model = glm::translate(model, cPos);
 
 
 	// Generate a matrix for the coordinates
-
-	Common::Matrix coords(4, 1);
-
-	coords(0, 0) = x;
-	coords(1, 0) = y;
-	coords(2, 0) = z;
-	coords(3, 0) = 1.0;
+	glm::vec4 coords = glm::vec4(world, 1.0f);
 
 
 	// Multiply them
-	Common::Matrix v(proj * model * coords);
+	glm::vec4 v = proj * model * coords;
 
 
 	// Projection divide
-
-	if (v(3, 0) == 0.0)
+	if (v.w == 0.0)
 		return false;
 
-	v(0, 0) /= v(3, 0);
-	v(1, 0) /= v(3, 0);
-	v(2, 0) /= v(3, 0);
+	v /= v.w;
 
 	// Viewport coordinates
+	const glm::vec4 view = glm::vec4(0.0f, 0.0f, getScreenSize());
 
-	float view[4];
+	screen.x = view.x + view.z * (v.x + 1.0) / 2.0;
+	screen.y = view.y + view.w * (v.y + 1.0) / 2.0;
+	screen.z =                   (v.z + 1.0) / 2.0;
 
-	view[0] = 0.0;
-	view[1] = 0.0;
-	view[2] = _screen->w;
-	view[3] = _screen->h;
-
-
-	sX = view[0] + view[2] * (v(0, 0) + 1.0) / 2.0;
-	sY = view[1] + view[3] * (v(1, 0) + 1.0) / 2.0;
-	sZ =                     (v(2, 0) + 1.0) / 2.0;
-
-	sX -= view[2] / 2.0;
-	sY -= view[3] / 2.0;
+	screen.x -= view.z / 2.0;
+	screen.y -= view.w / 2.0;
 	return true;
 }
 
-bool GraphicsManager::unproject(float x, float y,
-                                float &x1, float &y1, float &z1,
-                                float &x2, float &y2, float &z2) const {
-
+bool GraphicsManager::unproject(const glm::vec2 &screen, std::pair<glm::vec3, glm::vec3> &line) const {
 	try {
 		// Generate the inverse of the model matrix
 
-		Common::TransformationMatrix model;
-
-		float cPos[3];
-		float cOrient[3];
+		glm::mat4 model;
 
 		CameraMan.lock();
-		memcpy(cPos   , CameraMan.getPosition   (), 3 * sizeof(float));
-		memcpy(cOrient, CameraMan.getOrientation(), 3 * sizeof(float));
+		glm::vec3 cPos    = CameraMan.getPosition();
+		glm::vec3 cOrient = CameraMan.getOrientation();
 		CameraMan.unlock();
 
+		cOrient.y = -cOrient.y;
+		cPos.z    = -cPos.z;
+
 		// Apply camera position
-		model.translate(cPos[0], cPos[1], -cPos[2]);
+		model = glm::translate(model, cPos);
 
 		// Apply camera orientation
-		model.rotate( cOrient[2], 0.0, 0.0, 1.0);
-		model.rotate(-cOrient[1], 0.0, 1.0, 0.0);
-		model.rotate( cOrient[0], 1.0, 0.0, 0.0);
+		model = glm::rotate(model, cOrient.x, glm::vec3(0.0, 0.0, 1.0));
+		model = glm::rotate(model, cOrient.y, glm::vec3(0.0, 1.0, 0.0));
+		model = glm::rotate(model, cOrient.z, glm::vec3(1.0, 0.0, 0.0));
 
 
 		// Multiply with the inverse of our projection matrix
@@ -528,12 +495,7 @@ bool GraphicsManager::unproject(float x, float y,
 
 		// Viewport coordinates
 
-		float view[4];
-
-		view[0] = 0.0;
-		view[1] = 0.0;
-		view[2] = _screen->w;
-		view[3] = _screen->h;
+		const glm::vec4 view = glm::vec4(0.0f, 0.0f, getScreenSize());
 
 		float zNear = 0.0;
 		float zFar  = 1.0;
@@ -541,45 +503,41 @@ bool GraphicsManager::unproject(float x, float y,
 
 		// Generate a matrix for the coordinates at the near plane
 
-		Common::Matrix coordsNear(4, 1);
+		glm::vec4 coordsNear;
 
-		coordsNear(0, 0) = ((2 * (x - view[0])) / (view[2])) - 1.0;
-		coordsNear(1, 0) = ((2 * (y - view[1])) / (view[3])) - 1.0;
-		coordsNear(2, 0) = (2 * zNear) - 1.0;
-		coordsNear(3, 0) = 1.0;
+		coordsNear.x = (2 * (screen.x - view.x) / view.z) - 1.0;
+		coordsNear.y = (2 * (screen.y - view.y) / view.w) - 1.0;
+		coordsNear.z = (2 * zNear) - 1.0;
+		coordsNear.w = 1.0;
 
 
 
 		// Generate a matrix for the coordinates at the far plane
 
-		Common::Matrix coordsFar(4, 1);
+		glm::vec4 coordsFar;
 
-		coordsFar(0, 0) = ((2 * (x - view[0])) / (view[2])) - 1.0;
-		coordsFar(1, 0) = ((2 * (y - view[1])) / (view[3])) - 1.0;
-		coordsFar(2, 0) = (2 * zFar) - 1.0;
-		coordsFar(3, 0) = 1.0;
+		coordsFar.x = (2 * (screen.x - view.x) / view.z) - 1.0;
+		coordsFar.y = (2 * (screen.y - view.y) / view.w) - 1.0;
+		coordsFar.z = (2 * zFar) - 1.0;
+		coordsFar.w = 1.0;
 
 
 		// Unproject
-		Common::Matrix oNear(model * coordsNear);
-		Common::Matrix oFar (model * coordsFar );
-		if ((oNear(3, 0) == 0.0) || (oNear(3, 0) == 0.0))
+		glm::vec4 oNear = model * coordsNear;
+		glm::vec4 oFar  = model * coordsFar;
+		if ((oNear.w == 0.0) || (oFar.w == 0.0))
 			return false;
 
 
 		// And return the values
 
-		oNear(3, 0) = 1.0 / oNear(3, 0);
+		oNear /= oNear.w;
 
-		x1 = oNear(0, 0) * oNear(3, 0);
-		y1 = oNear(1, 0) * oNear(3, 0);
-		z1 = oNear(2, 0) * oNear(3, 0);
+		line.first = glm::vec3(oNear);
 
-		oFar(3, 0) = 1.0 / oFar(3, 0);
+		oFar /= oFar.w;
 
-		x2 = oFar(0, 0) * oFar(3, 0);
-		y2 = oFar(1, 0) * oFar(3, 0);
-		z2 = oFar(2, 0) * oFar(3, 0);
+		line.second = glm::vec3(oFar);
 
 	} catch (Common::Exception &e) {
 		Common::printException(e, "WARNING: ");
@@ -674,13 +632,13 @@ void GraphicsManager::takeScreenshot() {
 	unlockFrame();
 }
 
-Renderable *GraphicsManager::getGUIObjectAt(float x, float y) const {
+Renderable *GraphicsManager::getGUIObjectAt(const glm::vec2 &screen) const {
 	if (QueueMan.isQueueEmpty(kQueueVisibleGUIFrontObject))
 		return 0;
 
 	// Map the screen coordinates to our OpenGL GUI screen coordinates
-	x =               x  - (_screen->w / 2.0);
-	y = (_screen->h - y) - (_screen->h / 2.0);
+	glm::vec2 point = screen - glm::vec2(getScreenSize()) / 2.0f;
+	point.y = -point.y;
 
 	Renderable *object = 0;
 
@@ -696,7 +654,7 @@ Renderable *GraphicsManager::getGUIObjectAt(float x, float y) const {
 			continue;
 
 		// If the coordinates are "in" that object, return it
-		if (r.isIn(x, y)) {
+		if (r.isIn(point)) {
 			object = &r;
 			break;
 		}
@@ -706,15 +664,16 @@ Renderable *GraphicsManager::getGUIObjectAt(float x, float y) const {
 	return object;
 }
 
-Renderable *GraphicsManager::getWorldObjectAt(float x, float y) const {
+Renderable *GraphicsManager::getWorldObjectAt(const glm::vec2 &screen) const {
 	if (QueueMan.isQueueEmpty(kQueueVisibleWorldObject))
 		return 0;
 
-		// Map the screen coordinates to OpenGL world screen coordinates
-	y = _screen->h - y;
+	// Map the screen coordinates to OpenGL world screen coordinates
+	glm::vec2 point = screen;
+	point.y = getScreenSize().y - point.y;
 
-	float x1, y1, z1, x2, y2, z2;
-	if (!unproject(x, y, x1, y1, z1, x2, y2, z2))
+	std::pair<glm::vec3, glm::vec3> line;
+	if (!unproject(point, line))
 		return 0;
 
 	Renderable *object = 0;
@@ -730,7 +689,7 @@ Renderable *GraphicsManager::getWorldObjectAt(float x, float y) const {
 			continue;
 
 		// If the line intersects with the object, return it
-		if (r.isIn(x1, y1, z1, x2, y2, z2)) {
+		if (r.isIn(line)) {
 			object = &r;
 			break;
 		}
@@ -740,13 +699,13 @@ Renderable *GraphicsManager::getWorldObjectAt(float x, float y) const {
 	return object;
 }
 
-Renderable *GraphicsManager::getObjectAt(float x, float y) {
+Renderable *GraphicsManager::getObjectAt(const glm::vec2 &screen) {
 	Renderable *object = 0;
 
-	if ((object = getGUIObjectAt(x, y)))
+	if ((object = getGUIObjectAt(screen)))
 		return object;
 
-	if ((object = getWorldObjectAt(x, y)))
+	if ((object = getWorldObjectAt(screen)))
 		return object;
 
 	return 0;
@@ -785,9 +744,11 @@ bool GraphicsManager::playVideo() {
 	if (QueueMan.isQueueEmpty(kQueueVisibleVideo))
 		return false;
 
+	const glm::ivec2 screenSize = getScreenSize();
+
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glScalef(2.0 / _screen->w, 2.0 / _screen->h, 0.0);
+	glScalef(2.0 / screenSize.x, 2.0 / screenSize.y, 0.0);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -809,29 +770,29 @@ bool GraphicsManager::renderWorld() {
 	if (QueueMan.isQueueEmpty(kQueueVisibleWorldObject))
 		return false;
 
-	float cPos[3];
-	float cOrient[3];
-
 	CameraMan.lock();
-	memcpy(cPos   , CameraMan.getPosition   (), 3 * sizeof(float));
-	memcpy(cOrient, CameraMan.getOrientation(), 3 * sizeof(float));
+	glm::vec3 cPos    = -CameraMan.getPosition();
+	glm::vec3 cOrient = -CameraMan.getOrientation();
 	CameraMan.unlock();
+
+	cOrient.y = -cOrient.y;
+	cPos.z    = -cPos.z;
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 
-	glMultMatrixf(_projection.get());
+	glMultMatrixf(glm::value_ptr(_projection));
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
 	// Apply camera orientation
-	glRotatef(-cOrient[0], 1.0, 0.0, 0.0);
-	glRotatef( cOrient[1], 0.0, 1.0, 0.0);
-	glRotatef(-cOrient[2], 0.0, 0.0, 1.0);
+	glRotatef(cOrient.x, 1.0, 0.0, 0.0);
+	glRotatef(cOrient.y, 0.0, 1.0, 0.0);
+	glRotatef(cOrient.z, 0.0, 0.0, 1.0);
 
 	// Apply camera position
-	glTranslatef(-cPos[0], -cPos[1], cPos[2]);
+	glTranslatef(cPos.x, cPos.y, cPos.z);
 
 	QueueMan.lockQueue(kQueueVisibleWorldObject);
 	const std::list<Queueable *> &objects = QueueMan.getQueue(kQueueVisibleWorldObject);
@@ -881,11 +842,13 @@ bool GraphicsManager::renderGUIFront() {
 	if (QueueMan.isQueueEmpty(kQueueVisibleGUIFrontObject))
 		return false;
 
+	const glm::ivec2 screenSize = getScreenSize();
+
 	glDisable(GL_DEPTH_TEST);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glScalef(2.0 / _screen->w, 2.0 / _screen->h, 0.0);
+	glScalef(2.0 / screenSize.x, 2.0 / screenSize.y, 0.0);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -915,11 +878,13 @@ bool GraphicsManager::renderCursor() {
 
 	buildNewTextures();
 
+	const glm::ivec2 screenSize = getScreenSize();
+
 	glDisable(GL_DEPTH_TEST);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glScalef(2.0 / _screen->w, 2.0 / _screen->h, 0.0);
-	glTranslatef(- (_screen->w / 2.0), _screen->h / 2.0, 0.0);
+	glScalef(2.0 / screenSize.x, 2.0 / screenSize.y, 0.0);
+	glTranslatef(- (screenSize.x / 2.0), screenSize.y / 2.0, 0.0);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -965,26 +930,15 @@ void GraphicsManager::renderScene() {
 	endScene();
 }
 
-int GraphicsManager::getScreenWidth() const {
+glm::ivec2 GraphicsManager::getScreenSize() const {
 	if (!_screen)
-		return 0;
+		return glm::ivec2();
 
-	return _screen->w;
+	return glm::ivec2(_screen->w, _screen->h);
 }
 
-int GraphicsManager::getScreenHeight() const {
-	if (!_screen)
-		return 0;
-
-	return _screen->h;
-}
-
-int GraphicsManager::getSystemWidth() const {
-	return _systemWidth;
-}
-
-int GraphicsManager::getSystemHeight() const {
-	return _systemHeight;
+glm::ivec2 GraphicsManager::getSystemSize() const {
+	return _systemSize;
 }
 
 bool GraphicsManager::isFullScreen() const {
@@ -1107,32 +1061,31 @@ void GraphicsManager::toggleMouseGrab() {
 		SDL_WM_GrabInput(SDL_GRAB_OFF);
 }
 
-void GraphicsManager::setScreenSize(int width, int height) {
-	if ((width == _screen->w) && (height == _screen->h))
+void GraphicsManager::setScreenSize(const glm::ivec2 &size) {
+	if (size == getScreenSize())
 		// No changes, nothing to do
 		return;
 
 	// Force calling it from the main thread
 	if (!Common::isMainThread()) {
-		Events::MainThreadFunctor<void> functor(boost::bind(&GraphicsManager::setScreenSize, this, width, height));
+		Events::MainThreadFunctor<void> functor(boost::bind(&GraphicsManager::setScreenSize, this, size));
 
 		return RequestMan.callInMainThread(functor);
 	}
 
 	// Save properties
-	uint32 flags     = _screen->flags;
-	int    bpp       = _screen->format->BitsPerPixel;
-	int    oldWidth  = _screen->w;
-	int    oldHeight = _screen->h;
+	uint32 flags       = _screen->flags;
+	int    bpp         = _screen->format->BitsPerPixel;
+	glm::ivec2 oldSize = getScreenSize();
 
 	destroyContext();
 
 	// Now try to change modes
-	_screen = SDL_SetVideoMode(width, height, bpp, flags);
+	_screen = SDL_SetVideoMode(size.x, size.y, bpp, flags);
 
 	if (!_screen) {
 		// Could not change mode, revert back.
-		_screen = SDL_SetVideoMode(oldWidth, oldHeight, bpp, flags);
+		_screen = SDL_SetVideoMode(oldSize.x, oldSize.y, bpp, flags);
 	}
 
 	// There's no reason how this could possibly fail, but ok...
@@ -1142,8 +1095,8 @@ void GraphicsManager::setScreenSize(int width, int height) {
 	rebuildContext();
 
 	// Let the NotificationManager notify the Notifyables that the resolution changed
-	if ((oldWidth != _screen->w) || (oldHeight != _screen->h))
-		NotificationMan.resized(oldWidth, oldHeight, _screen->w, _screen->h);
+	if (oldSize != getScreenSize())
+		NotificationMan.resized(oldSize, getScreenSize());
 }
 
 void GraphicsManager::showCursor(bool show) {

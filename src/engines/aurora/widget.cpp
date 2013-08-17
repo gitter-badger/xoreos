@@ -35,8 +35,8 @@ namespace Engines {
 Widget::Widget(GUI &gui, const Common::UString &tag) : _gui(&gui), _tag(tag),
 	_parent(0), _owner(0),
 	_active(false), _visible(false), _disabled(false), _invisible(false),
-	_x(0.0), _y(0.0), _z(0.0),
-	_lastClickButton(0), _lastClickTime(0), _lastClickX(0.0), _lastClickY(0.0) {
+	_position(0.0, 0.0, 0.0),
+	_lastClickButton(0), _lastClickTime(0), _lastClickPosition(0.0, 0.0) {
 
 }
 
@@ -75,10 +75,9 @@ void Widget::show() {
 		return;
 
 	// Reset the double-click info
-	_lastClickButton = 0;
-	_lastClickTime   = 0;
-	_lastClickX      = 0.0;
-	_lastClickY      = 0.0;
+	_lastClickButton   = 0;
+	_lastClickTime     = 0;
+	_lastClickPosition = glm::vec2(0.0, 0.0);
 
 	if (!_invisible)
 		_visible = true;
@@ -108,39 +107,25 @@ const Widget *Widget::getParent() const {
 	return _parent;
 }
 
-void Widget::setPosition(float x, float y, float z) {
+void Widget::setPosition(const glm::vec3 &position) {
 	for (std::list<Widget *>::iterator it = _children.begin(); it != _children.end(); ++it) {
-		float sX, sY, sZ;
-		(*it)->getPosition(sX, sY, sZ);
-
-		sX -= _x;
-		sY -= _y;
-		sZ -= _z;
-
-		(*it)->setPosition(sX + x, sY + y, sZ + z);
+		const glm::vec3 cpos = (*it)->getPosition();
+		(*it)->setPosition(cpos - _position + position);
 	}
 
-	_x = x;
-	_y = y;
-	_z = z;
+	_position = position;
 }
 
-void Widget::movePosition(float x, float y, float z) {
-	setPosition(_x + x, _y + y, _z + z);
+void Widget::movePosition(const glm::vec3 &position) {
+	setPosition(_position + position);
 }
 
-void Widget::getPosition(float &x, float &y, float &z) const {
-	x = _x;
-	y = _y;
-	z = _z;
+glm::vec3 Widget::getPosition() const {
+	return _position;
 }
 
-float Widget::getWidth() const {
-	return 0.0;
-}
-
-float Widget::getHeight() const {
-	return 0.0;
+glm::vec2 Widget::getSize() const {
+	return glm::vec2(0.0, 0.0);
 }
 
 void Widget::setDisabled(bool disabled) {
@@ -177,16 +162,16 @@ void Widget::enter() {
 void Widget::leave() {
 }
 
-void Widget::mouseMove(uint8 state, float x, float y) {
+void Widget::mouseMove(uint8 state, const glm::vec2 &point) {
 }
 
-void Widget::mouseDown(uint8 state, float x, float y) {
+void Widget::mouseDown(uint8 state, const glm::vec2 &point) {
 }
 
-void Widget::mouseUp(uint8 state, float x, float y) {
+void Widget::mouseUp(uint8 state, const glm::vec2 &point) {
 }
 
-void Widget::mouseDblClick(uint8 state, float x, float y) {
+void Widget::mouseDblClick(uint8 state, const glm::vec2 &point) {
 }
 
 void Widget::subActive(Widget &widget) {

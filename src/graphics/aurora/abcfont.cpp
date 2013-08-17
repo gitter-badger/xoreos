@@ -68,8 +68,8 @@ void ABCFont::draw(uint32 c) const {
 
 	glBegin(GL_QUADS);
 	for (int i = 0; i < 4; i++) {
-		glTexCoord2f(cC.tX[i], cC.tY[i]);
-		glVertex2f  (cC.vX[i], cC.vY[i]);
+		glTexCoord2fv(glm::value_ptr(cC.tpos[i]));
+		glVertex2fv  (glm::value_ptr(cC.vpos[i]));
 	}
 	glEnd();
 
@@ -82,20 +82,19 @@ void ABCFont::load(const Common::UString &name) {
 		throw Common::Exception("No such font \"%s\"", name.c_str());
 
 	// Init the invalid char
-	_invalid.dataX  = 0;
-	_invalid.dataY  = 0;
-	_invalid.width  = 0;
-	_invalid.spaceL = 0;
-	_invalid.spaceR = 0;
+	_invalid.position = glm::uvec2(0, 0);
+	_invalid.width    = 0;
+	_invalid.spaceL   = 0;
+	_invalid.spaceR   = 0;
 
-	_invalid.tX[0] = 0.0; _invalid.tY[0] = 0.0;
-	_invalid.tX[1] = 0.0; _invalid.tY[1] = 0.0;
-	_invalid.tX[2] = 0.0; _invalid.tY[2] = 0.0;
-	_invalid.tX[3] = 0.0; _invalid.tY[3] = 0.0;
-	_invalid.vX[0] = 0.0; _invalid.vY[0] = 0.0;
-	_invalid.vX[1] = 0.0; _invalid.vY[1] = 0.0;
-	_invalid.vX[2] = 0.0; _invalid.vY[2] = 0.0;
-	_invalid.vX[3] = 0.0; _invalid.vY[3] = 0.0;
+	_invalid.tpos[0] = glm::vec2(0.0, 0.0);
+	_invalid.tpos[1] = glm::vec2(0.0, 0.0);
+	_invalid.tpos[2] = glm::vec2(0.0, 0.0);
+	_invalid.tpos[3] = glm::vec2(0.0, 0.0);
+	_invalid.vpos[0] = glm::vec2(0.0, 0.0);
+	_invalid.vpos[1] = glm::vec2(0.0, 0.0);
+	_invalid.vpos[2] = glm::vec2(0.0, 0.0);
+	_invalid.vpos[3] = glm::vec2(0.0, 0.0);
 
 	bool hasInvalid = false;
 
@@ -115,7 +114,7 @@ void ABCFont::load(const Common::UString &name) {
 			calcCharVertices(c);
 
 			// Points to the "invalid character"
-			if (!hasInvalid && (c.dataX == 0) && (c.dataY == 0)) {
+			if (!hasInvalid && (c.position == glm::uvec2(0, 0))) {
 				_invalid   = c;
 				hasInvalid = true;
 			}
@@ -128,7 +127,7 @@ void ABCFont::load(const Common::UString &name) {
 			readCharDesc(c, *abc);
 
 			// Points to the "invalid character"
-			if ((c.dataX == 0) && (c.dataY == 0)) {
+			if ((c.position == glm::uvec2(0, 0))) {
 				if (!hasInvalid) {
 					calcCharVertices(c);
 					_invalid   = c;
@@ -161,31 +160,25 @@ void ABCFont::readCharDesc(Char &c, Common::SeekableReadStream &abc) {
 	if (((offset % 1024) != 0) || (plane > 3))
 		throw Common::Exception("Invalid char data (%d, %d)", offset, plane);
 
-	c.dataX =  plane          * 32;
-	c.dataY = (offset / 1024) * 32;
+	c.position = glm::uvec2(plane, (offset / 1024)) * 32u;
 }
 
 void ABCFont::calcCharVertices(Char &c) {
-	const float w = _texture.getTexture().getWidth();
-	const float h = _texture.getTexture().getHeight();
+	const glm::vec2 size  = glm::vec2(_texture.getTexture().getSize());
+	const glm::vec2 vsize = glm::vec2(c.width, 32.0);
+	const glm::vec2 tsize = vsize / size;
 
-	const float vW = c.width;
-	const float vH = 32.0;
-	const float tW = vW / w;
-	const float tH = vH / h;
+	const glm::vec2 tpos = glm::vec2(c.position) / size;
 
-	const float tX = c.dataX / w;
-	const float tY = c.dataY / h;
+	c.tpos[0] = tpos + glm::vec2(0.0, tsize.y);
+	c.tpos[1] = tpos + tsize;
+	c.tpos[2] = tpos + glm::vec2(tsize.x, 0.0);
+	c.tpos[3] = tpos;
 
-	c.tX[0] = tX     ; c.tY[0] = tY + tH;
-	c.tX[1] = tX + tW; c.tY[1] = tY + tH;
-	c.tX[2] = tX + tW; c.tY[2] = tY     ;
-	c.tX[3] = tX     ; c.tY[3] = tY     ;
-
-	c.vX[0] = 0.0     ; c.vY[0] = 0.0     ;
-	c.vX[1] = 0.0 + vW; c.vY[1] = 0.0     ;
-	c.vX[2] = 0.0 + vW; c.vY[2] = 0.0 + vH;
-	c.vX[3] = 0.0     ; c.vY[3] = 0.0 + vH;
+	c.vpos[0] = glm::vec2(0.0, 0.0);
+	c.vpos[1] = glm::vec2(vsize.x, 0.0);
+	c.vpos[2] = vsize;
+	c.vpos[3] = glm::vec2(0.0, vsize.y);
 }
 
 const ABCFont::Char &ABCFont::findChar(uint32 c) const {

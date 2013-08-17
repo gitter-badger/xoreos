@@ -85,8 +85,7 @@ protected:
 	bool _finished; ///< Has playback finished?
 	bool _needCopy; ///< Is new frame content available that needs to by copied?
 
-	uint32 _width;  ///< The video's width.
-	uint32 _height; ///< The video's height.
+	glm::uvec2 _size;  ///< The video's [width,height].
 
 	Graphics::Surface *_surface; ///< The video's surface.
 
@@ -100,7 +99,7 @@ protected:
 	 *
 	 *  The surface's pixel format is always BGRA8888.
 	 */
-	void initVideo(uint32 width, uint32 height);
+	void initVideo(const glm::uvec2 &size);
 
 	void initSound(uint16 rate, int channels, bool is16);
 	void deinitSound();
@@ -146,7 +145,7 @@ private:
 	void copyData();
 
 	/** Get the dimensions of the quad to draw the texture on. */
-	void getQuadDimensions(float &width, float &height) const;
+	glm::vec2 getQuadDimensions() const;
 };
 
 } // End of namespace Video

@@ -44,7 +44,7 @@ namespace Engines {
 
 namespace KotOR {
 
-KotORWidget::Extend::Extend() : x(0.0), y(0.0), w(0.0), h(0.0) {
+KotORWidget::Extend::Extend() : position(0.0, 0.0), size(0.0, 0.0) {
 }
 
 
@@ -54,14 +54,14 @@ KotORWidget::Border::Border() : fillStyle(0), dimension(0), innerOffset(0),
 }
 
 
-KotORWidget::Text::Text() : strRef(Aurora::kStrRefInvalid), halign(0.0), valign(0.0),
+KotORWidget::Text::Text() : strRef(Aurora::kStrRefInvalid), align(0.0, 0.0),
 	r(1.0), g(1.0), b(1.0), pulsing(false) {
 
 }
 
 
 KotORWidget::KotORWidget(::Engines::GUI &gui, const Common::UString &tag) :
-	Widget(gui, tag), _width(0.0), _height(0.0), _r(1.0), _g(1.0), _b(1.0), _a(1.0),
+	Widget(gui, tag), _size(0.0, 0.0), _r(1.0), _g(1.0), _b(1.0), _a(1.0),
 	_quad(0), _text(0) {
 
 }
@@ -104,43 +104,35 @@ void KotORWidget::setTag(const Common::UString &tag) {
 		_text->setTag(getTag());
 }
 
-void KotORWidget::setPosition(float x, float y, float z) {
-	float oX, oY, oZ;
-	getPosition(oX, oY, oZ);
+void KotORWidget::setPosition(const glm::vec3 &position) {
+	const glm::vec3 opos = getPosition();
 
-	Widget::setPosition(x, y, z);
-	getPosition(x, y, z);
+	Widget::setPosition(position);
+	const glm::vec3 npos = getPosition();
 
 	if (_quad) {
-		float qX, qY, qZ;
-		_quad->getPosition(qX, qY, qZ);
+		const glm::vec3 qpos = _quad->getPosition();
 
-		_quad->setPosition(qX - oX + x, qY - oY + y, qZ - oZ + z);
+		_quad->setPosition(qpos - opos + npos);
 	}
 
 	if (_text) {
-		float tX, tY, tZ;
-		_text->getPosition(tX, tY, tZ);
+		const glm::vec3 tpos = _text->getPosition();
 
-		_text->setPosition(tX - oX + x, tY - oY + y, tZ - oZ + z);
+		_text->setPosition(tpos - opos + npos);
 	}
 }
 
-float KotORWidget::getWidth() const {
-	return _width;
-}
-
-float KotORWidget::getHeight() const {
-	return _height;
+glm::vec2 KotORWidget::getSize() const {
+	return _size;
 }
 
 void KotORWidget::setFill(const Common::UString &fill) {
 	if (!_quad) {
-		float x, y, z;
-		getPosition(x, y, z);
+		const glm::vec3 position = getPosition();
 
-		_quad = new Graphics::Aurora::GUIQuad("", 0.0, 0.0, _width, _height);
-		_quad->setPosition(x, y, z);
+		_quad = new Graphics::Aurora::GUIQuad("", glm::vec2(0.0, 0.0), _size);
+		_quad->setPosition(position);
 		_quad->setTag(getTag());
 		_quad->setClickable(true);
 
@@ -153,25 +145,27 @@ void KotORWidget::setFill(const Common::UString &fill) {
 }
 
 void KotORWidget::load(const Aurora::GFFStruct &gff) {
-	gff.getVector("COLOR", _r, _g, _b);
+	const glm::vec3 color = gff.getVector("COLOR");
+	_r = color.r;
+	_g = color.g;
+	_b = color.b;
 	_a = gff.getDouble("ALPHA", 1.0);
 
 	Extend extend = createExtend(gff);
 
-	_width  = extend.w;
-	_height = extend.h;
+	_size = extend.size;
 
-	Widget::setPosition(extend.x, extend.y, 0.0);
+	Widget::setPosition(glm::vec3(extend.position, 0.0));
 
 	Border border = createBorder(gff);
 
 	if (!border.fill.empty()) {
-		_quad = new Graphics::Aurora::HighlightableGUIQuad(border.fill, 0.0, 0.0, extend.w, extend.h);
+		_quad = new Graphics::Aurora::HighlightableGUIQuad(border.fill, glm::vec2(0.0, 0.0), extend.size);
 	} else {
-		_quad = new Graphics::Aurora::GUIQuad(border.fill, 0.0, 0.0, extend.w, extend.h);
+		_quad = new Graphics::Aurora::GUIQuad(border.fill, glm::vec2(0.0, 0.0), extend.size);
 	}
 
-	_quad->setPosition(extend.x, extend.y, 0.0);
+	_quad->setPosition(glm::vec3(extend.position, 0.0));
 	_quad->setTag(getTag());
 	_quad->setClickable(true);
 
@@ -184,14 +178,10 @@ void KotORWidget::load(const Aurora::GFFStruct &gff) {
 		_text = new Graphics::Aurora::HighlightableText(FontMan.get(text.font), text.text,
 		                                   text.r, text.g, text.b, 1.0);
 
-		const float hspan = extend.w - _text->getWidth();
-		const float vspan = extend.h - _text->getHeight();
+		const glm::vec2 span = extend.size - _text->getSize();
+		const glm::vec2 tpos = extend.position + text.align * span;
 
-
-		const float x = extend.x + text.halign * hspan;
-		const float y = extend.y + text.valign * vspan;
-
-		_text->setPosition(x, y, -1.0);
+		_text->setPosition(glm::vec3(tpos, -1.0));
 		_text->setTag(getTag());
 		_text->setClickable(true);
 	}
@@ -202,21 +192,16 @@ void KotORWidget::setColor(float r, float g, float b, float a) {
 }
 
 void KotORWidget::setText(const Common::UString &text) {
-		float extendX, extendY, extendZ, textX, textY, textZ;
-		Widget::getPosition(extendX, extendY, extendZ);
-		_text->getPosition(textX, textY, textZ);
+		const glm::vec2 epos = glm::vec2(Widget::getPosition());
+		const glm::vec2 tpos = glm::vec2(_text->getPosition());
 
-		const float halign = (textX - extendX) / (_width - _text->getWidth());
-		const float valign = (textY - extendY) / (_height - _text->getHeight());
-		 _text->set(text);
+		const glm::vec2 align = (tpos - epos) / (_size - _text->getSize());
+		_text->set(text);
 
-		const float hspan = _width - _text->getWidth();
-		const float vspan = _height - _text->getHeight();
+		const glm::vec2 span = _size - _text->getSize();
+		const glm::vec2 npos = epos + align * span;
 
-		const float x = extendX + halign * hspan;
-		const float y = extendY + valign * vspan;
-
-		_text->setPosition(x, y, -1.0);
+		_text->setPosition(glm::vec3(npos, -1.0));
 }
 
 KotORWidget::Extend KotORWidget::createExtend(const Aurora::GFFStruct &gff) {
@@ -225,10 +210,8 @@ KotORWidget::Extend KotORWidget::createExtend(const Aurora::GFFStruct &gff) {
 	if (gff.hasField("EXTENT")) {
 		const Aurora::GFFStruct &e = gff.getStruct("EXTENT");
 
-		extend.x = (float) e.getSint("LEFT");
-		extend.y = (float) e.getSint("TOP");
-		extend.w = (float) e.getSint("WIDTH");
-		extend.h = (float) e.getSint("HEIGHT");
+		extend.position = glm::vec2(e.getSint("LEFT"), e.getSint("TOP"));
+		extend.size = glm::vec2(e.getSint("WIDTH"), e.getSint("HEIGHT"));
 	}
 
 	return extend;
@@ -248,7 +231,10 @@ KotORWidget::Border KotORWidget::createBorder(const Aurora::GFFStruct &gff) {
 		border.dimension   = b.getUint("DIMENSION");
 		border.innerOffset = b.getUint("INNEROFFSET");
 
-		b.getVector("COLOR", border.r, border.g, border.b);
+		const glm::vec3 color = b.getVector("COLOR");
+		border.r = color.r;
+		border.g = color.g;
+		border.b = color.b;
 
 		border.pulsing = b.getBool("PULSING");
 	}
@@ -267,7 +253,10 @@ KotORWidget::Text KotORWidget::createText(const Aurora::GFFStruct &gff) {
 
 		const uint32 alignment = t.getUint("ALIGNMENT");
 
-		t.getVector("COLOR", text.r, text.g, text.b);
+		const glm::vec3 color = t.getVector("COLOR");
+		text.r = color.r;
+		text.g = color.g;
+		text.b = color.b;
 
 		text.pulsing = t.getBool("PULSING");
 
@@ -280,8 +269,7 @@ KotORWidget::Text KotORWidget::createText(const Aurora::GFFStruct &gff) {
 
 		// TODO: KotORWidget::getText(): Alignment
 		if (alignment == 18) {
-			text.halign = 0.5;
-			text.valign = 0.5;
+			text.align = glm::vec2(0.5, 0.5);
 		}
 	}
 

@@ -72,19 +72,15 @@ void ModelWidget::hide() {
 	NWNWidget::hide();
 }
 
-void ModelWidget::setPosition(float x, float y, float z) {
-	NWNWidget::setPosition(x, y, z);
+void ModelWidget::setPosition(const glm::vec3 &position) {
+	NWNWidget::setPosition(position);
 
-	getPosition(x, y, z);
-	_model->setPosition(x, y, z);
+	const glm::vec3 p = getPosition();
+	_model->setPosition(p);
 }
 
-float ModelWidget::getWidth() const {
-	return _model->getWidth();
-}
-
-float ModelWidget::getHeight() const {
-	return _model->getHeight();
+glm::vec2 ModelWidget::getSize() const {
+	return glm::vec2(_model->getSize());
 }
 
 } // End of namespace NWN

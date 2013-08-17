@@ -57,10 +57,9 @@ public:
 
 	void setTag(const Common::UString &tag);
 
-	void setPosition(float x, float y, float z);
+	void setPosition(const glm::vec3 &position);
 
-	float getWidth () const;
-	float getHeight() const;
+	glm::vec2 getSize() const;
 
 	void setFill(const Common::UString &fill);
 	void setColor(float r, float g, float b, float a);
@@ -68,10 +67,8 @@ public:
 
 protected:
 	struct Extend {
-		float x;
-		float y;
-		float w;
-		float h;
+		glm::vec2 position;
+		glm::vec2 size;
 
 		Extend();
 	};
@@ -97,8 +94,7 @@ protected:
 		Common::UString text;
 		uint32 strRef;
 
-		float halign;
-		float valign;
+		glm::vec2 align;
 
 		float r, g, b;
 
@@ -110,8 +106,7 @@ protected:
 	Graphics::Aurora::Highlightable *getTextHighlightableComponent() const;
 	Graphics::Aurora::Highlightable *getQuadHighlightableComponent() const;
 
-	float _width;
-	float _height;
+	glm::vec2 _size;
 
 	float _r;
 	float _g;

@@ -37,8 +37,8 @@
 
 namespace Video {
 
-Fader::Fader(uint32 width, uint32 height, int n) : _c(0), _n(n), _lastUpdate(0) {
-	initVideo(width, height);
+Fader::Fader(const glm::uvec2 &size, int n) : _c(0), _n(n), _lastUpdate(0) {
+	initVideo(size);
 }
 
 Fader::~Fader() {
@@ -72,23 +72,23 @@ void Fader::processData() {
 
 	// Fade from black to green
 	byte *data = _surface->getData();
-	for (uint32 i = 0; i < _height; i++) {
+	for (uint32 i = 0; i < _size.y; i++) {
 		byte *rowData = data;
 
-		for (uint32 j = 0; j < _width; j++, rowData += 4) {
+		for (uint32 j = 0; j < _size.x; j++, rowData += 4) {
 			rowData[0] = 0;
 			rowData[1] = _c;
 			rowData[2] = 0;
 			rowData[3] = 255;
 		}
 
-		data += _surface->getWidth() * 4;
+		data += _surface->getSize().x * 4;
 	}
 
 	// Keep a red square in the middle
-	int xPos = (_width  / 2) - 2;
-	int yPos = (_height / 2) - 2;
-	int dPos = (yPos * _surface->getWidth() + xPos) * 4;
+	int xPos = (_size.x / 2) - 2;
+	int yPos = (_size.y / 2) - 2;
+	int dPos = (yPos * _surface->getSize().x + xPos) * 4;
 	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
 			_surface->getData()[dPos + j * 4 + 0] =   0;
@@ -96,7 +96,7 @@ void Fader::processData() {
 			_surface->getData()[dPos + j * 4 + 2] = 255;
 			_surface->getData()[dPos + j * 4 + 3] = 255;
 		}
-		dPos += _surface->getWidth() * 4;
+		dPos += _surface->getSize().x * 4;
 	}
 
 	_lastUpdate = curTime;

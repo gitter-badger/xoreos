@@ -120,7 +120,7 @@ static Graphics::Aurora::Model *createNewGameFog() {
 		delete model;
 	}
 
-	model->setPosition(0.0, 0.0, 100.0);
+	model->setPosition(glm::vec3(0.0, 0.0, 100.0));
 
 	return model;
 }

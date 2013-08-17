@@ -73,7 +73,7 @@ protected:
 		kWidgetTypeListBox     =  11
 	};
 
-	void load(const Common::UString &resref, float width = 0.0, float height = 0.0);
+	void load(const Common::UString &resref, const glm::vec2 &size = glm::vec2(0.0, 0.0));
 
 	virtual void initWidget(Widget &widget);
 
@@ -107,7 +107,7 @@ private:
 
 	Common::UString _name;
 
-	void loadWidget(const Aurora::GFFStruct &strct, Widget *parent, float width, float height);
+	void loadWidget(const Aurora::GFFStruct &strct, Widget *parent, const glm::vec2 &size);
 
 	void createWidget(WidgetContext &ctx);
 };

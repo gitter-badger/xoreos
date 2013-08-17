@@ -35,7 +35,6 @@
 #include <map>
 
 #include "common/ustring.h"
-#include "common/transmatrix.h"
 #include "common/boundingbox.h"
 
 #include "graphics/types.h"

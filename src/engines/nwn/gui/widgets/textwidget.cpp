@@ -70,11 +70,11 @@ void TextWidget::hide() {
 	NWNWidget::hide();
 }
 
-void TextWidget::setPosition(float x, float y, float z) {
-	NWNWidget::setPosition(x, y, z);
+void TextWidget::setPosition(const glm::vec3 &position) {
+	NWNWidget::setPosition(position);
 
-	getPosition(x, y, z);
-	_text->setPosition(x, y, z);
+	const glm::vec3 p = getPosition();
+	_text->setPosition(p);
 }
 
 void TextWidget::setColor(float r, float g, float b, float a) {
@@ -90,12 +90,8 @@ void TextWidget::setText(const Common::UString &text) {
 	_text->set(text);
 }
 
-float TextWidget::getWidth() const {
-	return _text->getWidth();
-}
-
-float TextWidget::getHeight() const {
-	return _text->getHeight();
+glm::vec2 TextWidget::getSize() const {
+	return _text->getSize();
 }
 
 void TextWidget::setDisabled(bool disabled) {

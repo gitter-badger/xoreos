@@ -118,10 +118,11 @@ void TextureFont::load() {
 	if ((uls.size() < charCount) || (lrs.size() < charCount))
 		throw Common::Exception("Texture defines not enough character coordinates");
 
-	if ((texture.getWidth() == 0) || (texture.getHeight() == 0))
-		throw Common::Exception("Invalid texture dimensions (%dx%d)", texture.getWidth(), texture.getHeight());
+	const glm::uvec2 size = texture.getSize();
+	if (glm::any(glm::equal(size, glm::uvec2(0, 0))))
+		throw Common::Exception("Invalid texture dimensions (%dx%d)", size.x, size.y);
 
-	double textureRatio = ((double) texture.getWidth()) / ((double) texture.getHeight());
+	double textureRatio = ((double) size.x) / ((double) size.y);
 
 	// Get features
 	_height = txiFeatures.fontHeight * 100.0;

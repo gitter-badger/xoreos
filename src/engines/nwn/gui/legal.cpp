@@ -148,7 +148,7 @@ static FadeModel *createFade(const Common::UString &name) {
 Legal::Legal() : _billboard(0) {
 	_billboard = createFade("load_legal");
 
-	_billboard->setPosition(0.0, 0.0, -1000.0);
+	_billboard->setPosition(glm::vec3(0.0, 0.0, -1000.0));
 	_billboard->setTag("Legal");
 }
 

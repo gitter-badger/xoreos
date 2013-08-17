@@ -125,14 +125,12 @@ void GUI::loadWidget(const Aurora::GFFStruct &strct, Widget *parent) {
 
 		parent->addChild(*ctx.widget);
 
-		float pX, pY, pZ;
-		parent->getPosition(pX, pY, pZ);
+		const glm::vec3 ppos = parent->getPosition();
+		const glm::vec3 pos = glm::vec3(ctx.strct->getDouble("Obj_X") * 100.0 + ppos.x,
+		                                ctx.strct->getDouble("Obj_Y") * 100.0 + ppos.y,
+		                                ppos.z - ctx.strct->getDouble("Obj_Z") * 100.0);
 
-		float x = ctx.strct->getDouble("Obj_X") * 100.0 + pX;
-		float y = ctx.strct->getDouble("Obj_Y") * 100.0 + pY;
-		float z = pZ - ctx.strct->getDouble("Obj_Z") * 100.0;
-
-		ctx.widget->setPosition(x, y, z);
+		ctx.widget->setPosition(pos);
 	} else {
 		// We'll ignore these for now, centering the GUI
 	}
@@ -144,27 +142,22 @@ void GUI::loadWidget(const Aurora::GFFStruct &strct, Widget *parent) {
 	if (label && ctx.strct->hasField("Obj_Caption")) {
 		const Aurora::GFFStruct &caption = ctx.strct->getStruct("Obj_Caption");
 
-		float alignH = caption.getDouble("AurString_AlignH");
-		float alignV = caption.getDouble("AurString_AlignV");
-
-		float labelX = ctx.strct->getDouble("Obj_Label_X") * 100.0;
-		float labelY = ctx.strct->getDouble("Obj_Label_Y") * 100.0;
-		float labelZ = ctx.strct->getDouble("Obj_Label_Z") * 100.0;
+		const glm::vec2 align = glm::vec2(caption.getDouble("AurString_AlignH"),
+		                                  caption.getDouble("AurString_AlignV"));
+		glm::vec3 position = glm::vec3(ctx.strct->getDouble("Obj_Label_X") * 100.0,
+		                               ctx.strct->getDouble("Obj_Label_Y") * 100.0,
+		                               ctx.strct->getDouble("Obj_Label_Z") * 100.0);
 
 		if (ctx.type != kWidgetTypeLabel) {
-			labelX += ctx.widget->getWidth () * alignV;
-			labelY += ctx.widget->getHeight() * alignH;
-
-			labelX -= label->getWidth () / 2;
-			labelY -= label->getHeight() / 2;
+			position += glm::vec3(ctx.widget->getSize() * align, 1.0);
+			position -= glm::vec3(label->getSize() / 2.0f, 1.0);
 		} else {
-			labelY -= label->getHeight();
-
-			labelX -= label->getWidth () * alignH;
-			labelY -= label->getHeight() * alignV;
+			position.y -= label->getSize().y;
+			position   -= glm::vec3(label->getSize() * align, 1.0);
 		}
 
-		label->movePosition(labelX, labelY, -labelZ);
+		position.z = -position.z;
+		label->movePosition(position);
 	}
 
 	// uint32 layer = strct.getUint("Obj_Layer");
@@ -257,9 +250,9 @@ WidgetLabel *GUI::createCaption(const Aurora::GFFStruct &strct, Widget *parent) 
 
 	WidgetLabel *label = new WidgetLabel(*this, parent->getTag() + "#Caption", font, text);
 
-	float pX, pY, pZ;
-	parent->getPosition(pX, pY, pZ);
-	label->setPosition(pX, pY, pZ - 5.0);
+	glm::vec3 position = parent->getPosition();
+	position.z -= 5.0;
+	label->setPosition(position);
 
 	float r = caption.getDouble("AurString_ColorR", 1.0);
 	float g = caption.getDouble("AurString_ColorG", 1.0);

@@ -52,9 +52,9 @@ public:
 	void hide(); ///< Hide the situated object's model.
 
 	/** Set the situated object's position. */
-	void setPosition(float x, float y, float z);
+	void setPosition(const glm::vec3 &position);
 	/** Set the situated object's orientation. */
-	void setOrientation(float x, float y, float z);
+	void setOrientation(const glm::vec3 &orientation);
 
 	/** Is the situated object open? */
 	virtual bool isOpen() const = 0;

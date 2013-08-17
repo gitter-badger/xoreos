@@ -56,19 +56,18 @@ public:
 	~Scrollbar();
 
 	/** Set the current position of the scrollbar. */
-	void setPosition(float x, float y, float z);
+	void setPosition(const glm::vec3 &position);
 
 	/** Get the current position of the scrollbar. */
-	void getPosition(float &x, float &y, float &z) const;
+	glm::vec3 getPosition() const;
 
 	/** Is the point within the scrollbar? */
-	bool isIn(float x, float y) const;
+	bool isIn(const glm::vec2 &point) const;
 
 	/** Set the scrollbar length */
 	void setLength(float length);
 
-	float getWidth () const; ///< Get the scrollbar's width.
-	float getHeight() const; ///< Get the scrollbar's height.
+	glm::vec2 getSize() const; ///< Get the scrollbar's [width,height].
 
 	// Renderable
 	void calculateDistance();
@@ -82,9 +81,7 @@ private:
 
 	Type _type;
 
-	float _x;
-	float _y;
-	float _z;
+	glm::vec3 _position;
 
 	float _length;
 
@@ -106,7 +103,7 @@ public:
 	void show();
 	void hide();
 
-	void setPosition(float x, float y, float z);
+	void setPosition(const glm::vec3 &position);
 
 	/** Set the length of the scrollbar, as a fraction of the range. */
 	void setLength(float length);
@@ -116,13 +113,12 @@ public:
 	/** Set the current state, as a fraction of the range. */
 	void setState(float state);
 
-	float getWidth () const;
-	float getHeight() const;
+	glm::vec2 getSize() const;
 
 	float getBarPosition() const;
 
-	void mouseDown(uint8 state, float x, float y);
-	void mouseMove(uint8 state, float x, float y);
+	void mouseDown(uint8 state, const glm::vec2 &point);
+	void mouseMove(uint8 state, const glm::vec2 &point);
 
 private:
 	Scrollbar::Type _type;

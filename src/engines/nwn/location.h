@@ -31,6 +31,7 @@
 #define ENGINES_NWN_LOCATION_H
 
 #include "aurora/nwscript/enginetype.h"
+#include "common/types.h"
 
 namespace Engines {
 
@@ -52,9 +53,9 @@ public:
 	void setArea(Area *area);
 
 	/** Return the location's position. */
-	void getPosition(float &x, float &y, float &z) const;
+	glm::vec3 getPosition() const;
 	/** Set the location's position. */
-	void setPosition(float  x, float  y, float  z);
+	void setPosition(const glm::vec3 &position);
 
 	/** Return the location's orientation. */
 	float getFacing() const;
@@ -64,8 +65,8 @@ public:
 private:
 	Area *_area; ///< The location's area.
 
-	float _position[3]; ///< The location's position.
-	float _facing;      ///< The location's orientation.
+	glm::vec3 _position; ///< The location's position.
+	float _facing;       ///< The location's orientation.
 };
 
 } // End of namespace NWN

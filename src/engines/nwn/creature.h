@@ -161,9 +161,9 @@ public:
 	// Positioning
 
 	/** Set the creature's position. */
-	void setPosition(float x, float y, float z);
+	void setPosition(const glm::vec3 &position);
 	/** Set the creature's orientation. */
-	void setOrientation(float x, float y, float z);
+	void setOrientation(const glm::vec3 &orientation);
 
 	// Object/Cursor interactions
 

@@ -66,8 +66,8 @@ public:
 	/** Draw this character. */
 	virtual void draw(uint32 c) const = 0;
 
-	void draw(Common::UString text, const ColorPositions &colors,
-	          float r, float g, float b, float a, float align = 0.0) const;
+	void draw(Common::UString text, const ColorPositions &colors, const glm::vec4 &color,
+		        float align = 0.0) const;
 
 	float split(const Common::UString &line, std::vector<Common::UString> &lines,
 	            float maxWidth = 0.0) const;

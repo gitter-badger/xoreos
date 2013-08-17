@@ -70,14 +70,14 @@ GUI::GUI() : _widgetZ(0) {
 GUI::~GUI() {
 }
 
-void GUI::load(const Common::UString &resref, float width, float height) {
+void GUI::load(const Common::UString &resref, const glm::vec2 &size) {
 	_name = resref;
 
 	Aurora::GFFFile *gff = 0;
 	try {
 		gff = new Aurora::GFFFile(resref, Aurora::kFileTypeGUI, MKTAG('G', 'U', 'I', ' '));
 
-		loadWidget(gff->getTopLevel(), 0, width, height);
+		loadWidget(gff->getTopLevel(), 0, size);
 
 	} catch (Common::Exception &e) {
 		delete gff;
@@ -89,26 +89,25 @@ void GUI::load(const Common::UString &resref, float width, float height) {
 	delete gff;
 }
 
-void GUI::loadWidget(const Aurora::GFFStruct &strct, Widget *parent,
-		float width, float height) {
+void GUI::loadWidget(const Aurora::GFFStruct &strct, Widget *parent, const glm::vec2 &size) {
 
 	WidgetContext ctx(strct, parent);
 
 	createWidget(ctx);
 
-	if (width  <= 0.0)
-		width  = ctx.widget->getWidth();
-	if (height <= 0.0)
-		height = ctx.widget->getHeight();
+	glm::vec2 wsize = ctx.widget->getSize();
+	if (size.x > 0.0)
+		wsize.x = size.x;
+	if (size.y > 0.0)
+		wsize.y = size.y;
 
-	float wX, wY, wZ;
-	ctx.widget->getPosition(wX, wY, wZ);
+	glm::vec3 wpos = ctx.widget->getPosition();
 
-	wX = wX - (width / 2.0);
-	wY = ((height - wY) - ctx.widget->getHeight()) - (height / 2.0);
-	wZ = _widgetZ + wZ;
+	wpos.x = wpos.x - (wsize.x / 2.0);
+	wpos.y = ((wsize.y - wpos.y) - ctx.widget->getSize().y) - (wsize.y / 2.0);
+	wpos.z = _widgetZ + wpos.z;
 
-	ctx.widget->setPosition(wX, wY, wZ);
+	ctx.widget->setPosition(wpos);
 
 	_widgetZ -= 1.0;
 
@@ -119,7 +118,7 @@ void GUI::loadWidget(const Aurora::GFFStruct &strct, Widget *parent,
 		const Aurora::GFFList &children = ctx.strct->getList("CONTROLS");
 
 		for (Aurora::GFFList::const_iterator c = children.begin(); c != children.end(); ++c)
-			loadWidget(**c, ctx.widget, width, height);
+			loadWidget(**c, ctx.widget, wsize);
 	}
 }
 
@@ -264,9 +263,9 @@ WidgetListBox *GUI::getListBox(const Common::UString &tag, bool vital) {
 void GUI::addBackground(const Common::UString &background) {
 	WidgetPanel *backPanel =
 		new WidgetPanel(*this, "Background", "1600x1200" + background,
-		                -800.0, -600.0, 1600.0, 1200.0);
+		                glm::vec2(-800.0, -600.0), glm::vec2(1600.0, 1200.0));
 
-	backPanel->movePosition(0.0, 0.0, 10.0);
+	backPanel->movePosition(glm::vec3(0.0, 0.0, 10.0));
 
 	addWidget(backPanel);
 }

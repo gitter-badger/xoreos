@@ -53,8 +53,6 @@ noinst_HEADERS = system.h \
                  filelist.h \
                  bitstream.h \
                  huffman.h \
-                 matrix.h \
-                 transmatrix.h \
                  boundingbox.h \
                  configfile.h \
                  configman.h \
@@ -90,8 +88,6 @@ libcommon_la_SOURCES = version.cpp \
                        filepath.cpp \
                        filelist.cpp \
                        huffman.cpp \
-                       matrix.cpp \
-                       transmatrix.cpp \
                        boundingbox.cpp \
                        configfile.cpp \
                        configman.cpp \

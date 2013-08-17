@@ -96,10 +96,7 @@ struct ColorPosition {
 
 	bool defaultColor;
 
-	float r;
-	float g;
-	float b;
-	float a;
+	glm::vec4 color;
 };
 
 typedef std::vector<ColorPosition> ColorPositions;

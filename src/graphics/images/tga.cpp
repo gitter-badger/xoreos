@@ -86,8 +86,8 @@ void TGA::readHeader(Common::SeekableReadStream &tga, ImageType &imageType, byte
 	_mipMaps.push_back(new MipMap);
 
 	// Image dimensions
-	_mipMaps[0]->width  = tga.readUint16LE();
-	_mipMaps[0]->height = tga.readUint16LE();
+	_mipMaps[0]->size.x = tga.readUint16LE();
+	_mipMaps[0]->size.y = tga.readUint16LE();
 
 	// Bits per pixel
 	pixelDepth = tga.readByte();
@@ -124,7 +124,7 @@ void TGA::readHeader(Common::SeekableReadStream &tga, ImageType &imageType, byte
 
 void TGA::readData(Common::SeekableReadStream &tga, ImageType imageType, byte pixelDepth, byte imageDesc) {
 	if (imageType == kImageTypeTrueColor || imageType == kImageTypeRLETrueColor) {
-		uint32 dataSize = _mipMaps[0]->width * _mipMaps[0]->height;
+		uint32 dataSize = _mipMaps[0]->size.x * _mipMaps[0]->size.y;
 		if      (_format == kPixelFormatBGR)
 			dataSize *= 3;
 		else if (_format == kPixelFormatBGRA)
@@ -136,7 +136,7 @@ void TGA::readData(Common::SeekableReadStream &tga, ImageType imageType, byte pi
 			if (pixelDepth == 16) {
 				// Convert from 16bpp to 32bpp
 				// 16bpp TGA is ARGB1555
-				uint16 count = _mipMaps[0]->width * _mipMaps[0]->height;
+				uint16 count = _mipMaps[0]->size.x * _mipMaps[0]->size.y;
 				byte *dst = &_mipMaps[0]->data[0];
 
 				while (count--) {
@@ -155,10 +155,10 @@ void TGA::readData(Common::SeekableReadStream &tga, ImageType imageType, byte pi
 			readRLE(tga, pixelDepth);
 		}
 	} else if (imageType == kImageTypeBW) {
-		_mipMaps[0]->data.resize(_mipMaps[0]->width * _mipMaps[0]->height * 4);
+		_mipMaps[0]->data.resize(_mipMaps[0]->size.x * _mipMaps[0]->size.y * 4);
 
 		byte  *data  = &_mipMaps[0]->data[0];
-		uint32 count = _mipMaps[0]->width * _mipMaps[0]->height;
+		uint32 count = _mipMaps[0]->size.x * _mipMaps[0]->size.y;
 
 		while (count-- > 0) {
 			byte g = tga.readByte();
@@ -173,7 +173,7 @@ void TGA::readData(Common::SeekableReadStream &tga, ImageType imageType, byte pi
 
 	// Bit 5 of imageDesc set means the origin in upper-left corner
 	if (imageDesc & 0x20)
-		flipVertically(&_mipMaps[0]->data[0], _mipMaps[0]->width, _mipMaps[0]->height, pixelDepth / 8);
+		flipVertically(&_mipMaps[0]->data[0], _mipMaps[0]->size.x, _mipMaps[0]->size.y, pixelDepth / 8);
 }
 
 void TGA::readRLE(Common::SeekableReadStream &tga, byte pixelDepth) {
@@ -181,7 +181,7 @@ void TGA::readRLE(Common::SeekableReadStream &tga, byte pixelDepth) {
 		throw Common::Exception("Unhandled RLE depth %d", pixelDepth);
 
 	byte  *data  = &_mipMaps[0]->data[0];
-	uint32 count = _mipMaps[0]->width * _mipMaps[0]->height;
+	uint32 count = _mipMaps[0]->size.x * _mipMaps[0]->size.y;
 
 	while (count > 0) {
 		byte code = tga.readByte();
