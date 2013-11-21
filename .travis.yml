@@ -21,5 +21,6 @@ before_install:
       cmake
       ninja-build
       libgl1-mesa-dev libegl1-mesa-dev libglu1-mesa-dev
+      libsdl1.2-dev libsdl-image1.2-dev libsdl-ttf2.0-dev
 notifications:
   email: false
