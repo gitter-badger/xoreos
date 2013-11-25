@@ -169,17 +169,15 @@ void TPC::readHeader(Common::SeekableReadStream &tpc, bool &needDeSwizzle) {
 		mipMap->width  = MAX<uint32>(width,  1);
 		mipMap->height = MAX<uint32>(height, 1);
 
-		mipMap->size = MAX<uint32>(dataSize, minDataSize);
+		mipMap->data.resize(MAX<uint32>(dataSize, minDataSize));
 
-		mipMap->data = 0;
-
-		if (fullDataSize < mipMap->size) {
+		if (fullDataSize < mipMap->data.size()) {
 			// Wouldn't fit
 			delete mipMap;
 			break;
 		}
 
-		fullDataSize -= mipMap->size;
+		fullDataSize -= mipMap->data.size();
 
 		_mipMaps.push_back(mipMap);
 
@@ -213,18 +211,16 @@ void TPC::readData(Common::SeekableReadStream &tpc, bool needDeSwizzle) {
 		const bool widthPOT = ((*mipMap)->width & ((*mipMap)->width - 1)) == 0;
 		const bool swizzled = needDeSwizzle && widthPOT;
 
-		(*mipMap)->data = new byte[(*mipMap)->size];
-
 		if (swizzled) {
-			std::vector<byte> tmp((*mipMap)->size);
+			std::vector<byte> tmp((*mipMap)->data.size());
 
-			if (tpc.read(&tmp[0], (*mipMap)->size) != (*mipMap)->size)
+			if (tpc.read(&tmp[0], (*mipMap)->data.size()) != (*mipMap)->data.size())
 				throw Common::Exception(Common::kReadError);
 
-			deSwizzle((*mipMap)->data, &tmp[0], (*mipMap)->width, (*mipMap)->height);
+			deSwizzle(&(*mipMap)->data[0], &tmp[0], (*mipMap)->width, (*mipMap)->height);
 
 		} else {
-			if (tpc.read((*mipMap)->data, (*mipMap)->size) != (*mipMap)->size)
+			if (tpc.read(&(*mipMap)->data[0], (*mipMap)->data.size()) != (*mipMap)->data.size())
 				throw Common::Exception(Common::kReadError);
 		}
 

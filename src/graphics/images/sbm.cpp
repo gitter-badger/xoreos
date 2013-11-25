@@ -72,9 +72,7 @@ void SBM::readData(Common::SeekableReadStream &sbm) {
 
 	_mipMaps[0]->width  = 4 * 32;
 	_mipMaps[0]->height = NEXTPOWER2((uint32) rowCount * 32);
-	_mipMaps[0]->size   = _mipMaps[0]->width * _mipMaps[0]->height * 4;
-
-	_mipMaps[0]->data = new byte[_mipMaps[0]->size];
+	_mipMaps[0]->data.resize(_mipMaps[0]->width * _mipMaps[0]->height * 4);
 
 	// SBM data consists of character sized 32 * 32 pixels, with 2 bits per pixel.
 	// 4 characters each are on top of each other, occupying the same x/y
@@ -84,7 +82,7 @@ void SBM::readData(Common::SeekableReadStream &sbm) {
 	int masks [4] = { 0x03, 0x0C, 0x30, 0xC0 };
 	int shifts[4] = {    0,    2,    4,    6 };
 
-	byte *data = _mipMaps[0]->data;
+	byte *data = &_mipMaps[0]->data[0];
 	byte buffer[1024];
 	for (uint32 c = 0; c < rowCount; c++) {
 
@@ -107,7 +105,7 @@ void SBM::readData(Common::SeekableReadStream &sbm) {
 		}
 	}
 
-	byte *dataEnd = _mipMaps[0]->data + _mipMaps[0]->size;
+	byte *dataEnd = &_mipMaps[0]->data[0] + _mipMaps[0]->data.size();
 	memset(data, 0, dataEnd - data);
 }
 

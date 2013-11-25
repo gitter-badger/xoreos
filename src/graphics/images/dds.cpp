@@ -126,8 +126,6 @@ void DDS::readStandardHeader(Common::SeekableReadStream &dds) {
 
 		setSize(*mipMap);
 
-		mipMap->data = 0;
-
 		width  >>= 1;
 		height >>= 1;
 
@@ -186,13 +184,13 @@ void DDS::readBioWareHeader(Common::SeekableReadStream &dds) {
 
 		setSize(*mipMap);
 
-		if (fullDataSize < mipMap->size) {
+		if (fullDataSize < mipMap->data.size()) {
 			// Wouldn't fit
 			delete mipMap;
 			break;
 		}
 
-		fullDataSize -= mipMap->size;
+		fullDataSize -= mipMap->data.size();
 
 		_mipMaps.push_back(mipMap);
 
@@ -206,30 +204,28 @@ void DDS::setSize(MipMap &mipMap) {
 	// Depending on the pixel format, set the image data size in bytes
 
 	if (_formatRaw == kPixelFormatDXT1) {
-		mipMap.size = ((mipMap.width + 3) / 4) * ((mipMap.height + 3) / 4) *  8;
+		mipMap.data.resize(((mipMap.width + 3) / 4) * ((mipMap.height + 3) / 4) *  8);
 	} else if (_formatRaw == kPixelFormatDXT3) {
-		mipMap.size = ((mipMap.width + 3) / 4) * ((mipMap.height + 3) / 4) * 16;
+		mipMap.data.resize(((mipMap.width + 3) / 4) * ((mipMap.height + 3) / 4) * 16);
 	} else if (_formatRaw == kPixelFormatDXT5) {
-		mipMap.size = ((mipMap.width + 3) / 4) * ((mipMap.height + 3) / 4) * 16;
+		mipMap.data.resize(((mipMap.width + 3) / 4) * ((mipMap.height + 3) / 4) * 16);
 	} else if (_formatRaw == kPixelFormatRGBA8) {
-		mipMap.size = mipMap.width * mipMap.height * 4;
+		mipMap.data.resize(mipMap.width * mipMap.height * 4);
 	} else if (_formatRaw == kPixelFormatRGB8) {
-		mipMap.size = mipMap.width * mipMap.height * 3;
+		mipMap.data.resize(mipMap.width * mipMap.height * 3);
 	} else if (_formatRaw == kPixelFormatRGB5A1) {
-		mipMap.size = mipMap.width * mipMap.height * 2;
+		mipMap.data.resize(mipMap.width * mipMap.height * 2);
 	} else if (_formatRaw == kPixelFormatRGB5) {
-		mipMap.size = mipMap.width * mipMap.height * 2;
+		mipMap.data.resize(mipMap.width * mipMap.height * 2);
 	} else
-		mipMap.size = 0;
+		mipMap.data.clear();
 }
 
 void DDS::readData(Common::SeekableReadStream &dds) {
 	// TODO: Do we need to flip the data?
 
 	for (std::vector<MipMap *>::iterator mipMap = _mipMaps.begin(); mipMap != _mipMaps.end(); ++mipMap) {
-		(*mipMap)->data = new byte[(*mipMap)->size];
-
-		if (dds.read((*mipMap)->data, (*mipMap)->size) != (*mipMap)->size)
+		if (dds.read(&(*mipMap)->data[0], (*mipMap)->data.size()) != (*mipMap)->data.size())
 			throw Common::Exception(Common::kReadError);
 	}
 }

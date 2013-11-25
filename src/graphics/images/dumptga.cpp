@@ -108,7 +108,7 @@ void dumpTGA(const Common::UString &fileName, const ImageDecoder *image) {
 
 	const ImageDecoder::MipMap &mipMap = image->getMipMap(0);
 
-	dumpTGA(fileName, mipMap.data, mipMap.width, mipMap.height, image->getFormat());
+	dumpTGA(fileName, &mipMap.data[0], mipMap.width, mipMap.height, image->getFormat());
 }
 
 } // End of namespace Graphics

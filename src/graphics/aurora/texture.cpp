@@ -242,7 +242,7 @@ void Texture::doRebuild() {
 
 			glCompressedTexImage2D(GL_TEXTURE_2D, i, _image->getFormatRaw(),
 			                       mipMap.width, mipMap.height, 0,
-			                       mipMap.size, mipMap.data);
+			                       mipMap.data.size(), &mipMap.data[0]);
 		}
 
 	} else {
@@ -253,7 +253,7 @@ void Texture::doRebuild() {
 
 			glTexImage2D(GL_TEXTURE_2D, i, _image->getFormatRaw(),
 			             mipMap.width, mipMap.height, 0, _image->getFormat(),
-			             _image->getDataType(), mipMap.data);
+			             _image->getDataType(), &mipMap.data[0]);
 		}
 
 	}

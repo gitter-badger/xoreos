@@ -51,13 +51,11 @@ public:
 
 	/** A mip map. */
 	struct MipMap {
-		int    width;  ///< The mip map's width.
-		int    height; ///< The mip map's height.
-		uint32 size;   ///< The mip map's size in bytes.
-		byte  *data;   ///< The mip map's data.
+		int    width;             ///< The mip map's width.
+		int    height;            ///< The mip map's height.
+		std::vector< byte > data; ///< The mip map's data.
 
 		MipMap();
-		~MipMap();
 
 		void swap(MipMap &right);
 	};

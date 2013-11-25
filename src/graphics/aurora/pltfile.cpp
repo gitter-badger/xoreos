@@ -188,8 +188,7 @@ void PLTImage::create(const PLTFile &parent) {
 
 	_mipMaps[0]->width  = parent._width;
 	_mipMaps[0]->height = parent._height;
-	_mipMaps[0]->size   = _mipMaps[0]->width * _mipMaps[0]->height * 4;
-	_mipMaps[0]->data   = new byte[_mipMaps[0]->size];
+	_mipMaps[0]->data.resize(_mipMaps[0]->width * _mipMaps[0]->height * 4);
 
 	byte rows[4 * 256 * PLTFile::kLayerMAX];
 	getColorRows(parent, rows);
@@ -197,7 +196,7 @@ void PLTImage::create(const PLTFile &parent) {
 	uint32 pixels = parent._width * parent._height;
 	const byte *image = parent._dataImage;
 	const byte *layer = parent._dataLayers;
-	      byte *dst   = _mipMaps[0]->data;
+	      byte *dst   = &_mipMaps[0]->data[0];
 
 	for (uint32 i = 0; i < pixels; i++, image++, layer++, dst += 4)
 		memcpy(dst, rows + (*layer * 4 * 256) + (*image * 4), 4);
@@ -226,7 +225,7 @@ void PLTImage::getColorRows(const PLTFile &parent, byte *rows) {
 
 			row = mipMap.height - 1 - row;
 
-			memcpy(rows, mipMap.data + (row * 4 * 256), 4 * 256);
+			memcpy(rows, &mipMap.data[0] + (row * 4 * 256), 4 * 256);
 
 		} catch (...) {
 			memset(rows, 0, 4 * 256);

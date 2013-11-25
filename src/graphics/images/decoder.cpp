@@ -39,17 +39,12 @@
 
 namespace Graphics {
 
-ImageDecoder::MipMap::MipMap() : width(0), height(0), size(0), data(0) {
-}
-
-ImageDecoder::MipMap::~MipMap() {
-	delete[] data;
+ImageDecoder::MipMap::MipMap() : width(0), height(0), data() {
 }
 
 void ImageDecoder::MipMap::swap(MipMap &right) {
 	SWAP(width , right.width );
 	SWAP(height, right.height);
-	SWAP(size  , right.size  );
 	SWAP(data  , right.data  );
 }
 
@@ -106,17 +101,16 @@ void ImageDecoder::decompress(MipMap &out, const MipMap &in, PixelFormatRaw form
 
 	out.width  = in.width;
 	out.height = in.height;
-	out.size   = out.width * out.height * 4;
-	out.data   = new byte[out.size];
+	out.data.resize(out.width * out.height * 4);
 
-	Common::MemoryReadStream *stream = new Common::MemoryReadStream(in.data, in.size);
+	Common::MemoryReadStream *stream = new Common::MemoryReadStream(&in.data[0], in.data.size());
 
 	if      (format == kPixelFormatDXT1)
-		decompressDXT1(out.data, *stream, out.width, out.height, out.width * 4);
+		decompressDXT1(&out.data[0], *stream, out.width, out.height, out.width * 4);
 	else if (format == kPixelFormatDXT3)
-		decompressDXT3(out.data, *stream, out.width, out.height, out.width * 4);
+		decompressDXT3(&out.data[0], *stream, out.width, out.height, out.width * 4);
 	else if (format == kPixelFormatDXT5)
-		decompressDXT5(out.data, *stream, out.width, out.height, out.width * 4);
+		decompressDXT5(&out.data[0], *stream, out.width, out.height, out.width * 4);
 
 	delete stream;
 }
@@ -150,7 +144,7 @@ bool ImageDecoder::dumpTGA(const Common::UString &fileName) const {
 
 	MipMap mipMap;
 	decompress(mipMap, *_mipMaps[0], _formatRaw);
-	Graphics::dumpTGA(fileName, mipMap.data, mipMap.width, mipMap.height, kPixelFormatRGBA);
+	Graphics::dumpTGA(fileName, &mipMap.data[0], mipMap.width, mipMap.height, kPixelFormatRGBA);
 
 	return true;
 }
