@@ -155,6 +155,10 @@ add_definitions(-DPACKAGE_STRING="xoreos ${xoreos_VERSION}")
 parse_configure(configure.ac src)
 target_link_libraries(xoreos ${XOREOS_LIBRARIES})
 
+include(CTest)
+enable_testing()
+add_subdirectory(test)
+
 # -------------------------------------------------------------------------
 # documentation
 option(XOREOS_BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentation" OFF)
