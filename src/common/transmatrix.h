@@ -25,6 +25,8 @@
 #ifndef COMMON_TRANSMATRIX_H
 #define COMMON_TRANSMATRIX_H
 
+#include <glm/glm.hpp>
+
 #include "common/matrix.h"
 #include "common/vector3.h"
 
@@ -108,7 +110,7 @@ public:
 	Vector3 vectorRotateReverse(Vector3 &v) const;
 
 private:
-	float _elements[16];
+	glm::mat4 _matrix;
 };
 
 } // End of namespace Common
